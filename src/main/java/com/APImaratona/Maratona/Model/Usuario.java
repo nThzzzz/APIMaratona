@@ -1,22 +1,35 @@
 package com.APImaratona.Maratona.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "tb_pessoas")
-public class Pessoa {
+@Table(name = "tb_usuarios")
+public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String nome;
     private String email;
+    private String senha;
+    private String nomeUsuario;
 
-    public Pessoa() {}
 
-    public Pessoa(int id, String nome, String email) {
+    // N:1 varias pessoas pertencem a um time
+    @ManyToOne
+    @JoinColumn(name = "id_time")
+    @JsonIgnore
+    private Time time;
+
+    public Usuario() {}
+
+    public Usuario(long id, String nome, String email, String senha, String nomeUsuario, Time time) {
         this.id = id;
         this.nome = nome;
         this.email = email;
+        this.senha = senha;
+        this.nomeUsuario = nomeUsuario;
+        this.time = time;
     }
 
     public long getId() {
@@ -41,5 +54,13 @@ public class Pessoa {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public Time getTime() {
+        return time;
+    }
+
+    public void setTime(Time time) {
+        this.time = time;
     }
 }
