@@ -21,6 +21,8 @@ public class Time {
     // 1:N, um time tem muitos usuarios
     @OneToMany(mappedBy = "time", cascade = CascadeType.ALL)
     private List<Usuario> usuarios;
+
+    @Column (unique = true)
     private String nome;
 
 }

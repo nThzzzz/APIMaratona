@@ -16,8 +16,12 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     private String nome;
+
+    @Column (unique = true)
     private String email;
     private String senha;
+
+    @Column (unique = true)
     private String nomeUsuario;
 
     // N:1 varias pessoas pertencem a um time
