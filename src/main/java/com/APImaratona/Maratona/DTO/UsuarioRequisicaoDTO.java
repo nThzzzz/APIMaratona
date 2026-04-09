@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CadastroRequisicaoDTO {
+public class UsuarioRequisicaoDTO {
     private String nome;
     private String email;
     private String senha;
@@ -16,7 +16,7 @@ public class CadastroRequisicaoDTO {
 
     private String nomeTime;
 
-    public CadastroRequisicaoDTO(String nome, String email, String senha, String nomeUsuario) {
+    public UsuarioRequisicaoDTO(String nome, String email, String senha, String nomeUsuario) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;

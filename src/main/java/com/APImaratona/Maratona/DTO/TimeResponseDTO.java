@@ -9,10 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
-public class CadastroTimeRequisicaoDTO {
+public class TimeResponseDTO {
     private String nomeTime;
-    private List<String> nomesUsuarios;
-
-
+    private List<UsuarioResponseDTO> usuarios;
 }
