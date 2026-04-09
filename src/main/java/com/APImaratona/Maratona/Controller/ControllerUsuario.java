@@ -1,6 +1,8 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.CadastroRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.EditarUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.ExcluirUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.UsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Services.UsuarioService;
@@ -22,7 +24,7 @@ public class ControllerUsuario {
     private final UsuarioService usuarioService;
 
     @PostMapping("/cadastro")
-    public String cadastroUsuario(@RequestBody CadastroRequisicaoDTO cr){
+    public String cadastroUsuario(@RequestBody UsuarioRequisicaoDTO cr){
         usuarioService.cadastrarUsuario(cr);
         return "Usuario cadastrado com sucesso";
     }
@@ -43,6 +45,18 @@ public class ControllerUsuario {
         }
 
         throw new RuntimeException("Nenhum parametro fornecido");
+    }
+
+    @PutMapping("/editarUsuario/{nomeUsuario}")
+    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioRequisicaoDTO dto){
+        String resultado = usuarioService.editarUsuario(nomeUsuario, dto);
+        return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
+    }
+
+    @DeleteMapping("/excluirUsuario")
+    public String excluirUsuario(@RequestBody ExcluirUsuarioRequisicaoDTO dto){
+        usuarioService.excluirUsuario(dto);
+        return "Usuario excluido com sucesso";
     }
 
 }
