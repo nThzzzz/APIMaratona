@@ -1,14 +1,14 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.CadastroRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.EditarUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.ExcluirUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.UsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.TimeRepository;
 import com.APImaratona.Maratona.Repository.UsuarioRepository;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,9 +21,7 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepo;
     private final TimeRepository timeRepo;
 
-    public void cadastrarUsuario(CadastroRequisicaoDTO dto){
-
-
+    public void cadastrarUsuario(UsuarioRequisicaoDTO dto){
         // validacao e cadastros do usuario
 
         Usuario usuario = new Usuario();
@@ -38,7 +36,7 @@ public class UsuarioService {
             throw new RuntimeException("Usuário já cadastrado");
         }
 
-        if(usuarioRepo.existsByNome(dto.getNome())){
+        if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
             throw new RuntimeException("Nome de Usuário já cadastrado");
         }
 
@@ -115,5 +113,138 @@ public class UsuarioService {
         usuarioDTO.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
 
         return usuarioDTO;
+    }
+
+    public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto){
+        if(dto.getSenha() == null){
+            throw new RuntimeException("Senha = NULL");
+        }
+
+        //verifica se é por nome
+        if(dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank()){
+            if(!usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
+                throw new RuntimeException("Nome de usuario nao encontrado");
+            }
+
+            Usuario u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
+
+            if(verificaSenha(u.getSenha(), dto.getSenha())){
+                if(u.getTime() != null) {
+                    u.getTime().getUsuarios().remove(u);
+                }
+
+                usuarioRepo.delete(u);
+                return;
+            }else{
+                throw new RuntimeException("Senha incorreta");
+            }
+        }
+
+        //verifica se é por email
+        if(dto.getEmail() != null && !dto.getEmail().isBlank()){
+            if(!usuarioRepo.existsByEmail(dto.getEmail())){
+                throw new RuntimeException("Email de usuario nao encontrado");
+            }
+
+            Usuario u = usuarioRepo.findByEmail(dto.getEmail());
+
+            if(verificaSenha(u.getSenha(), dto.getSenha())){
+                if(u.getTime() != null) {
+                    u.getTime().getUsuarios().remove(u);
+                }
+
+                usuarioRepo.delete(u);
+                return;
+            }else{
+                throw new RuntimeException("Senha incorreta");
+            }
+        }
+
+        throw new RuntimeException("email ou nomeUsuario faltante");
+    }
+
+    public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto){
+        String resultado = "";
+
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
+            throw new RuntimeException("Usuario: " + nomeUsuario + ", nao encontrado");
+        }
+
+        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+
+        if(!verificaSenha(usuario.getSenha(), dto.getSenhaAntiga())){
+            throw new RuntimeException("Senha incorreta");
+        }
+
+        // Validação do Nome de Usuário
+        if (dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank() && !usuario.getNomeUsuario().equals(dto.getNomeUsuario())) {
+            if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
+                throw new RuntimeException("Nome de usuário ja em uso");
+            }
+            usuario.setNomeUsuario(dto.getNomeUsuario());
+            resultado += "| Nome de Usuario |";
+        }
+
+        // Validação do Nome
+        if (dto.getNome() != null && !dto.getNome().isBlank() && !usuario.getNome().equals(dto.getNome())) {
+            usuario.setNome(dto.getNome());
+            resultado += "| Nome |";
+        }
+
+        // Validação do Email
+        if (dto.getEmail() != null && !dto.getEmail().isBlank() && !usuario.getEmail().equals(dto.getEmail())) {
+            if(usuarioRepo.existsByEmail(dto.getEmail())){
+                throw new RuntimeException("Email ja em uso");
+            }
+            usuario.setEmail(dto.getEmail());
+            resultado += "| email |";
+        }
+
+        // Validação da Senha Nova
+        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !usuario.getSenha().equals(dto.getSenhaNova())) {
+            usuario.setSenha(dto.getSenhaNova());
+            resultado += "| Senha |";
+        }
+
+        // Validação do Time
+        if (dto.getNomeTime() != null && !dto.getNomeTime().isBlank()) {
+
+            if(!timeRepo.existsByNome(dto.getNomeTime())){
+                throw new RuntimeException("Time: " + dto.getNomeTime() + ", inexistente");
+            }
+
+            Time novoTime = timeRepo.findByNome(dto.getNomeTime());
+
+            boolean jaEstaNoTime = (usuario.getTime() != null && usuario.getTime().getNome().equals(novoTime.getNome()));
+
+            if(!jaEstaNoTime){
+                if(novoTime.getUsuarios().size() >= 3){
+                    throw new RuntimeException("Time: " + novoTime.getNome() + ", ja possui 3 integrantes");
+                }
+
+                if (usuario.getTime() != null) {
+                    usuario.getTime().getUsuarios().remove(usuario);
+                }
+
+                novoTime.getUsuarios().add(usuario);
+                usuario.setTime(novoTime);
+
+                timeRepo.save(novoTime);
+
+                resultado += "| Time |";
+            }
+        }
+
+        usuarioRepo.save(usuario);
+
+        if (resultado.isEmpty()) {
+            return "Nenhuma alteração realizada";
+        }
+
+        return resultado;
+    }
+
+    private boolean verificaSenha(String senhaCerto, String senha){
+        return senhaCerto.equals(senha);
     }
 }
