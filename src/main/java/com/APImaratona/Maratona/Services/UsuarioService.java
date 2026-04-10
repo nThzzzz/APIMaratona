@@ -1,13 +1,13 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.EditarUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.ExcluirUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.UsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
-import com.APImaratona.Maratona.Repository.TimeRepository;
-import com.APImaratona.Maratona.Repository.UsuarioRepository;
+import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
+import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

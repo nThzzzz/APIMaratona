@@ -1,12 +1,12 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.TimeRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.TimeResponseDTO;
-import com.APImaratona.Maratona.DTO.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
-import com.APImaratona.Maratona.Repository.TimeRepository;
-import com.APImaratona.Maratona.Repository.UsuarioRepository;
+import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
+import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

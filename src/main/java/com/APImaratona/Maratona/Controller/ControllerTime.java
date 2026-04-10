@@ -1,8 +1,7 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.TimeRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.TimeResponseDTO;
-import com.APImaratona.Maratona.Model.Time;
+import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
 import com.APImaratona.Maratona.Services.TimeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

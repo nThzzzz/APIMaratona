@@ -1,4 +1,4 @@
-package com.APImaratona.Maratona.DTO;
+package com.APImaratona.Maratona.DTO.Time;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TimeResponseDTO {
+
+public class TimeRequisicaoDTO {
     private String nomeTime;
-    private List<UsuarioResponseDTO> usuarios;
+    private List<String> nomesUsuarios;
 }

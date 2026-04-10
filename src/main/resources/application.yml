@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: Maratona
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USUARIO}
+    password: ${DATABASE_SENHA}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
