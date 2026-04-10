@@ -1,4 +1,4 @@
-package com.APImaratona.Maratona.DTO;
+package com.APImaratona.Maratona.DTO.Usuario;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

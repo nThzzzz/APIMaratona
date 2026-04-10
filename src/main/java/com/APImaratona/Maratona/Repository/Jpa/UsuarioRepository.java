@@ -1,4 +1,4 @@
-package com.APImaratona.Maratona.Repository;
+package com.APImaratona.Maratona.Repository.Jpa;
 
 
 import com.APImaratona.Maratona.Model.Usuario;
