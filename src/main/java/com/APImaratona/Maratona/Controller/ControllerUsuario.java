@@ -1,10 +1,10 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.EditarUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.ExcluirUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.UsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.UsuarioResponseDTO;
-import com.APImaratona.Maratona.Model.Usuario;
+import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +22,12 @@ public class ControllerUsuario {
     }
 
     private final UsuarioService usuarioService;
+    private final CodeforcesService codeforcesService;
 
     @PostMapping("/cadastro")
     public String cadastroUsuario(@RequestBody UsuarioRequisicaoDTO cr){
         usuarioService.cadastrarUsuario(cr);
+        codeforcesService.sincronizarPerfilCodeforces(cr.getNomeUsuario());
         return "Usuario cadastrado com sucesso";
     }
 
