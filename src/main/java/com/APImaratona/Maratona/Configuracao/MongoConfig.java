@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @Configuration
-@EnableMongoRepositories(basePackages = "com.APImaratona.Maratona.Repository.Mongo")
 public class MongoConfig {
 
     @Value("${spring.data.mongodb.uri}")   // Lê do application.yml

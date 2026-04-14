@@ -16,3 +16,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  neo4j:
+    uri: ${NEO4J_URI}
+    authentication:
+      username: ${NEO4J_USUARIO}
+      password: ${NEO4J_SENHA}

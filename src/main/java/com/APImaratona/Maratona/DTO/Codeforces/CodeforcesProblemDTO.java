@@ -10,4 +10,5 @@ public class CodeforcesProblemDTO {
     private String index;
     private String name;
     private List<String> tags;
+    private int rating;
 }
