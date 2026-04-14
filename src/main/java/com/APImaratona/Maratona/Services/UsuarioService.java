@@ -8,6 +8,7 @@ import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
+import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepo;
     private final TimeRepository timeRepo;
+    private final UsuarioNodeRepository usuarioNodeRepository;
 
     public void cadastrarUsuario(UsuarioRequisicaoDTO dto){
         // validacao e cadastros do usuario

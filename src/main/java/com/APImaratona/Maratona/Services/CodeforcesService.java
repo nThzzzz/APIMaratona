@@ -34,12 +34,9 @@ public class CodeforcesService {
                         List<String> tags = submissao.getProblem().getTags();
                         log.info("Problema resolvido encontrado: {} com as tags: {}", idProblema, tags);
 
-                        // TODO: Salvar a relação (Utilizador) -> [:RESOLVEU] -> (Tag) no Neo4j
-
-
-                        // Salva o problema no mongo
+                        // Salva o problema no mongo e faz a relacao no neo4j
                         // TODO (se eu estiver muito afim): usar uma API pra burlar o cloudflare
-                        problemasService.cadastrarProblema(submissao);
+                        problemasService.cadastrarProblema(submissao, nomeUsuarioCodeforces);
 
                     }
                 }

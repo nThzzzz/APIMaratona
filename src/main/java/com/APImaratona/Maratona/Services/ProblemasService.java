@@ -1,8 +1,14 @@
 package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Model.Problema;
+import com.APImaratona.Maratona.Model.ProblemaNode;
+import com.APImaratona.Maratona.Model.UsuarioNode;
+import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Mongo.ProblemaRepository;
+import com.APImaratona.Maratona.Repository.Neo4j.ProblemaNodeRepository;
+import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -10,32 +16,84 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 
 @Slf4j // Para usar o log.info em vez do print
 @Service
 @RequiredArgsConstructor
 public class ProblemasService {
     private final ProblemaRepository problemaRepository;
+    private final ProblemaNodeRepository problemaNodeRepository;
+    private final UsuarioNodeRepository usuarioNodeRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
 
-    public void cadastrarProblema(CodeforcesSubmissionDTO submissao) {
+    public void cadastrarProblema(CodeforcesSubmissionDTO submissao, String nomeUsuario) {
         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();
         List<String> tags = submissao.getProblem().getTags();
 
-        // verifica se o probleja ja existe
+        try {
+            usuarioNodeRepository.registrarResolucao(nomeUsuario, idProblema);
+        }catch (Exception e){
+            log.info("Erro: {}", e.getMessage());
+        }
+        log.info("Problema: {} relcionado com sucesso", idProblema);
+
+        // verifica se o problema ja existe
         if(problemaRepository.existsByIdProblema(idProblema)){
             log.info("Problema ja cadastrado: {} com as tags: {}", idProblema, tags);
             return;
         }
 
         Problema problema = extrairTexto(submissao);
-
         problemaRepository.save(problema);
         log.info("Problema cadastrado com sucesso: {} com as tags: {}", idProblema, tags);
     }
 
     public Problema buscarProblema(String idProblema){
         return problemaRepository.findByIdProblema(idProblema);
+    }
+
+    public List<UsuarioResponseDTO> usuariosFizeramProblema(String idProblema) {
+        List<UsuarioResponseDTO> usuariosDTO = new ArrayList<>();
+
+        if(!problemaRepository.existsByIdProblema(idProblema)){
+            throw new RuntimeException("Problema: "+ idProblema +", não cadastrado");
+        }
+
+        Optional<ProblemaNode> problemaNode = problemaNodeRepository.findById(idProblema);
+
+        Set<UsuarioNode> usuariosNodes = problemaNode.get().getUsuariosResolveram();
+
+        for(UsuarioNode uNode : usuariosNodes) {
+            UsuarioResponseDTO dto = usuarioService.buscarUsuarioNome(uNode.getNomeUsuario());
+            usuariosDTO.add(dto);
+        }
+
+        return usuariosDTO;
+    }
+
+    public List<Problema> problemasFeitosPor(String nomeUsuario){
+        List<Problema> listaProblemas = new ArrayList<>();
+
+        if(!usuarioRepository.existsByNomeUsuario(nomeUsuario)){
+            throw new RuntimeException("Usuário: " + nomeUsuario + ", não encontrado");
+        }
+
+        Optional<UsuarioNode> problemas = usuarioNodeRepository.findById(nomeUsuario);
+
+        Set<ProblemaNode> problemasResolvidos = problemas.get().getProblemasResolvidos();
+
+        for(ProblemaNode pb : problemasResolvidos){
+            Problema problemaFull = problemaRepository.findByIdProblema(pb.getIdProblema());
+            listaProblemas.add(problemaFull);
+        }
+
+        return listaProblemas;
+    }
+
+    public List<Problema> listarProblemas(){
+        return problemaRepository.findAll();
     }
 
     private Problema extrairTexto(CodeforcesSubmissionDTO submissao){
@@ -46,6 +104,9 @@ public class ProblemasService {
 
         problema.setIdProblema(idProblema);
         problema.setTags(tags);
+
+        int rating = submissao.getProblem().getRating();
+        problema.setRating(rating);
 
         String contestId = idProblema.replaceAll("[^0-9]", "");
         String index = idProblema.replaceAll("[0-9]", "");
