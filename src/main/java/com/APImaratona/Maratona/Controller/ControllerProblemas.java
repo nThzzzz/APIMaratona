@@ -36,4 +36,9 @@ public class ControllerProblemas {
         return problemasService.problemasFeitosPor(nomeUsuario);
     }
 
+//    @GetMapping("/recomendarProblema/{nomeUsuario}")
+//    public Problema recomendarProblema(@PathVariable String nomeUsuario){
+//        return problemasService.recomendarProblemas(nomeUsuario);
+//    }
+
 }

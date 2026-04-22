@@ -12,6 +12,9 @@ spring:
     mongodb:
       uri: ${MONGO_URI}
 
+    redis:
+      url: ${REDIS_URL}
+
   jpa:
     hibernate:
       ddl-auto: update

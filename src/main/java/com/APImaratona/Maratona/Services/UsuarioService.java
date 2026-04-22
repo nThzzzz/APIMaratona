@@ -4,12 +4,17 @@ import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
+import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
+import com.APImaratona.Maratona.Model.UsuarioNode;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,7 +27,12 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepo;
     private final TimeRepository timeRepo;
     private final UsuarioNodeRepository usuarioNodeRepository;
+    private final CodeforcesService codeforcesService;
 
+    @Caching(evict = {
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
+            @CacheEvict(value = "cacheProblemasUsuario", key = "#dto.nomeUsuario")
+    })
     public void cadastrarUsuario(UsuarioRequisicaoDTO dto){
         // validacao e cadastros do usuario
 
@@ -35,11 +45,11 @@ public class UsuarioService {
         usuario.setEmail(dto.getEmail());
 
         if(usuarioRepo.existsByEmail(dto.getEmail())){
-            throw new RuntimeException("Usuário já cadastrado");
+            throw new RegraDeNegocio("Usuário já cadastrado");
         }
 
         if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
-            throw new RuntimeException("Nome de Usuário já cadastrado");
+            throw new RegraDeNegocio("Nome de Usuário já cadastrado");
         }
 
         // validadcao do time
@@ -51,13 +61,13 @@ public class UsuarioService {
                 time =  timeRepo.findByNome(dto.getNomeTime());
 
                 if(time.getUsuarios().size()==3){
-                    throw new RuntimeException("O time " + time.getNome() + ", já possui 3 integrantes");
+                    throw new RegraDeNegocio("O time " + time.getNome() + ", já possui 3 integrantes");
                 }
 
                 time.getUsuarios().add(usuario);
                 usuario.setTime(time);
             }else{
-                throw new RuntimeException("Time não encontrado");
+                throw new EntidadeNaoEcontrada("Time não encontrado");
             }
         }
 
@@ -87,7 +97,7 @@ public class UsuarioService {
         UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
 
         if(!usuarioRepo.existsByNomeUsuario(nome)){
-            throw new RuntimeException("Usuario nao encontrado");
+            throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
@@ -104,7 +114,7 @@ public class UsuarioService {
         UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
 
         if(!usuarioRepo.existsByEmail(email)){
-            throw new RuntimeException("Usuario nao encontrado");
+            throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email);
@@ -117,73 +127,72 @@ public class UsuarioService {
         return usuarioDTO;
     }
 
+    // Para atualizar o cache caso tenha excluido um usuario
+    @Caching(evict = {
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true), // Nome exato!
+            @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
+    })
     public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto){
         if(dto.getSenha() == null){
-            throw new RuntimeException("Senha = NULL");
+            throw new RegraDeNegocio("Senha = NULL");
         }
+
+        Usuario u = new Usuario();
 
         //verifica se é por nome
         if(dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank()){
             if(!usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
-                throw new RuntimeException("Nome de usuario nao encontrado");
+                throw new EntidadeNaoEcontrada("Nome de usuario nao encontrado");
             }
 
-            Usuario u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
-
-            if(verificaSenha(u.getSenha(), dto.getSenha())){
-                if(u.getTime() != null) {
-                    u.getTime().getUsuarios().remove(u);
-                }
-
-                usuarioRepo.delete(u);
-                return;
-            }else{
-                throw new RuntimeException("Senha incorreta");
-            }
-        }
-
-        //verifica se é por email
-        if(dto.getEmail() != null && !dto.getEmail().isBlank()){
+            u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
+        }else if(dto.getEmail() != null && !dto.getEmail().isBlank()){ // verifica email
             if(!usuarioRepo.existsByEmail(dto.getEmail())){
-                throw new RuntimeException("Email de usuario nao encontrado");
+                throw new RegraDeNegocio("Email de usuario nao encontrado");
             }
 
-            Usuario u = usuarioRepo.findByEmail(dto.getEmail());
-
-            if(verificaSenha(u.getSenha(), dto.getSenha())){
-                if(u.getTime() != null) {
-                    u.getTime().getUsuarios().remove(u);
-                }
-
-                usuarioRepo.delete(u);
-                return;
-            }else{
-                throw new RuntimeException("Senha incorreta");
-            }
+            u = usuarioRepo.findByEmail(dto.getEmail());
         }
 
-        throw new RuntimeException("email ou nomeUsuario faltante");
+        if(verificaSenha(u.getSenha(), dto.getSenha())){
+            if(u.getTime() != null) {
+                u.getTime().getUsuarios().remove(u);
+            }
+
+            usuarioNodeRepository.deleteById(u.getNomeUsuario());
+            usuarioRepo.delete(u);
+            return;
+        }else{
+            throw new RegraDeNegocio("Senha incorreta");
+        }
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true), // Nome exato!
+            @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
+    })
     public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto){
         String resultado = "";
 
         if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
-            throw new RuntimeException("Usuario: " + nomeUsuario + ", nao encontrado");
+            throw new EntidadeNaoEcontrada("Usuario: " + nomeUsuario + ", nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
 
         if(!verificaSenha(usuario.getSenha(), dto.getSenhaAntiga())){
-            throw new RuntimeException("Senha incorreta");
+            throw new RegraDeNegocio("Senha incorreta");
         }
 
         // Validação do Nome de Usuário
         if (dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank() && !usuario.getNomeUsuario().equals(dto.getNomeUsuario())) {
             if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
-                throw new RuntimeException("Nome de usuário ja em uso");
+                throw new RegraDeNegocio("Nome de usuário ja em uso");
             }
             usuario.setNomeUsuario(dto.getNomeUsuario());
+            usuarioNodeRepository.deleteById(dto.getNomeUsuario());
+            codeforcesService.sincronizarPerfilCodeforces(usuario.getNomeUsuario());
+
             resultado += "| Nome de Usuario |";
         }
 
@@ -196,7 +205,7 @@ public class UsuarioService {
         // Validação do Email
         if (dto.getEmail() != null && !dto.getEmail().isBlank() && !usuario.getEmail().equals(dto.getEmail())) {
             if(usuarioRepo.existsByEmail(dto.getEmail())){
-                throw new RuntimeException("Email ja em uso");
+                throw new RegraDeNegocio("Email ja em uso");
             }
             usuario.setEmail(dto.getEmail());
             resultado += "| email |";
@@ -212,7 +221,7 @@ public class UsuarioService {
         if (dto.getNomeTime() != null && !dto.getNomeTime().isBlank()) {
 
             if(!timeRepo.existsByNome(dto.getNomeTime())){
-                throw new RuntimeException("Time: " + dto.getNomeTime() + ", inexistente");
+                throw new EntidadeNaoEcontrada("Time: " + dto.getNomeTime() + ", inexistente");
             }
 
             Time novoTime = timeRepo.findByNome(dto.getNomeTime());
@@ -221,7 +230,7 @@ public class UsuarioService {
 
             if(!jaEstaNoTime){
                 if(novoTime.getUsuarios().size() >= 3){
-                    throw new RuntimeException("Time: " + novoTime.getNome() + ", ja possui 3 integrantes");
+                    throw new RegraDeNegocio("Time: " + novoTime.getNome() + ", ja possui 3 integrantes");
                 }
 
                 if (usuario.getTime() != null) {

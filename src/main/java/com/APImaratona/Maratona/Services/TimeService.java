@@ -3,6 +3,8 @@ package com.APImaratona.Maratona.Services;
 import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
+import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
@@ -87,7 +89,7 @@ public class TimeService {
 
     public TimeResponseDTO buscarTime(String nome){
         if(!timeRepo.existsByNome(nome)){
-            throw new RuntimeException("Time nao encontrado");
+            throw new EntidadeNaoEcontrada("Time: "+ nome +", nao encontrado");
         }
 
         Time time = timeRepo.findByNome(nome);
@@ -127,32 +129,32 @@ public class TimeService {
 
     public void adicionarUsuarioNoTime(TimeRequisicaoDTO dto){
         if(dto.getNomeTime() == null){
-            throw new RuntimeException("Parametro nome do time NULL");
+            throw new RegraDeNegocio("Parametro nome do time NULL");
         }
 
         if(!timeRepo.existsByNome(dto.getNomeTime())){
-            throw new RuntimeException("Time inexistente");
+            throw new RegraDeNegocio("Time inexistente");
         }
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
         if(dto.getNomesUsuarios().isEmpty()){
-            throw new RuntimeException("Nenhum usuario para adicionar");
+            throw new RegraDeNegocio("Nenhum usuario para adicionar");
         }
 
         if((dto.getNomesUsuarios().size() + time.getUsuarios().size()) > 3){
-            throw new RuntimeException("Time: " + time.getNome() + ", tera mais de 3 integrantes");
+            throw new RegraDeNegocio("Time: " + time.getNome() + ", tera mais de 3 integrantes");
         }
 
         for(String nome : dto.getNomesUsuarios()){
             if(!usuarioRepo.existsByNomeUsuario(nome)){
-                throw new RuntimeException("Nome de usuario: " + nome + ", nao econtrado");
+                throw new EntidadeNaoEcontrada("Nome de usuario: " + nome + ", nao econtrado");
             }
 
             Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
             if(usuario.getTime() != null){
-                throw new RuntimeException("Usuario: " + usuario.getNome() + ", ja esta no Time: " +
+                throw new RegraDeNegocio("Usuario: " + usuario.getNome() + ", ja esta no Time: " +
                         usuario.getTime().getNome());
             }
 
@@ -166,28 +168,28 @@ public class TimeService {
 
     public void removerUsuarioNoTime(TimeRequisicaoDTO dto){
         if(dto.getNomeTime() == null){
-            throw new RuntimeException("Parametro nome do time NULL");
+            throw new RegraDeNegocio("Parametro nome do time NULL");
         }
 
         if(!timeRepo.existsByNome(dto.getNomeTime())){
-            throw new RuntimeException("Time inexistente");
+            throw new EntidadeNaoEcontrada("Time inexistente");
         }
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
         if(dto.getNomesUsuarios().isEmpty()){
-            throw new RuntimeException("Nenhum usuario para remover");
+            throw new RegraDeNegocio("Nenhum usuario para remover");
         }
 
         for(String nome : dto.getNomesUsuarios()){
             if(!usuarioRepo.existsByNomeUsuario(nome)){
-                throw new RuntimeException("Nome de usuario: " + nome + ", nao econtrado");
+                throw new EntidadeNaoEcontrada("Nome de usuario: " + nome + ", nao econtrado");
             }
 
             Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
             if(!usuario.getTime().getNome().equals(time.getNome())){
-                throw new RuntimeException("Usuario: " + usuario.getNome() + ", nao esta no Time: " +
+                throw new RegraDeNegocio("Usuario: " + usuario.getNome() + ", nao esta no Time: " +
                         time.getNome());
             }
 

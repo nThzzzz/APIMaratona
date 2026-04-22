@@ -2,8 +2,10 @@ package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Model.Problema;
 import com.APImaratona.Maratona.Model.ProblemaNode;
+import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Model.UsuarioNode;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Mongo.ProblemaRepository;
@@ -14,8 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.*;
 
 @Slf4j // Para usar o log.info em vez do print
@@ -26,8 +34,8 @@ public class ProblemasService {
     private final ProblemaNodeRepository problemaNodeRepository;
     private final UsuarioNodeRepository usuarioNodeRepository;
     private final UsuarioRepository usuarioRepository;
-    private final UsuarioService usuarioService;
 
+    @CacheEvict(value = "cacheTodosProblemas", allEntries = true)
     public void cadastrarProblema(CodeforcesSubmissionDTO submissao, String nomeUsuario) {
         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();
         List<String> tags = submissao.getProblem().getTags();
@@ -54,30 +62,47 @@ public class ProblemasService {
         return problemaRepository.findByIdProblema(idProblema);
     }
 
+    @Cacheable(value = "cacheUsuariosProblema", key = "#idProblema")
+    @Transactional(value = "neo4jTransactionManager", readOnly = true)
     public List<UsuarioResponseDTO> usuariosFizeramProblema(String idProblema) {
         List<UsuarioResponseDTO> usuariosDTO = new ArrayList<>();
 
         if(!problemaRepository.existsByIdProblema(idProblema)){
-            throw new RuntimeException("Problema: "+ idProblema +", não cadastrado");
+            throw new EntidadeNaoEcontrada("Problema: "+ idProblema +", não cadastrado");
         }
 
         Optional<ProblemaNode> problemaNode = problemaNodeRepository.findById(idProblema);
 
+        if (problemaNode.isEmpty()) {
+            return usuariosDTO; // Retorna vazio se não tiver no grafo
+        }
+
         Set<UsuarioNode> usuariosNodes = problemaNode.get().getUsuariosResolveram();
 
         for(UsuarioNode uNode : usuariosNodes) {
-            UsuarioResponseDTO dto = usuarioService.buscarUsuarioNome(uNode.getNomeUsuario());
-            usuariosDTO.add(dto);
+            Usuario usuario = usuarioRepository.findByNomeUsuario(uNode.getNomeUsuario());
+
+            if (usuario != null) {
+                UsuarioResponseDTO dto = new UsuarioResponseDTO();
+                dto.setNome(usuario.getNome());
+                dto.setEmail(usuario.getEmail());
+                dto.setNomeUsuario(usuario.getNomeUsuario());
+                dto.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
+
+                usuariosDTO.add(dto);
+            }
         }
 
         return usuariosDTO;
     }
 
+    @Cacheable(value = "cacheProblemasUsuario", key = "#nomeUsuario")
+    @Transactional(value = "neo4jTransactionManager", readOnly = true)
     public List<Problema> problemasFeitosPor(String nomeUsuario){
         List<Problema> listaProblemas = new ArrayList<>();
 
         if(!usuarioRepository.existsByNomeUsuario(nomeUsuario)){
-            throw new RuntimeException("Usuário: " + nomeUsuario + ", não encontrado");
+            throw new EntidadeNaoEcontrada("Usuário: " + nomeUsuario + ", não encontrado");
         }
 
         Optional<UsuarioNode> problemas = usuarioNodeRepository.findById(nomeUsuario);
@@ -92,6 +117,7 @@ public class ProblemasService {
         return listaProblemas;
     }
 
+    @Cacheable(value = "cacheTodosProblemas")
     public List<Problema> listarProblemas(){
         return problemaRepository.findAll();
     }

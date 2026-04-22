@@ -4,6 +4,8 @@ import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesResponseDTO;
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -17,7 +19,6 @@ public class CodeforcesService {
 
     private final RestTemplate restTemplate;
     private final ProblemasService problemasService;
-    //TODO: Neo4jRepository e o MongoRepository
 
     @Async
     public void sincronizarPerfilCodeforces(String nomeUsuarioCodeforces) {

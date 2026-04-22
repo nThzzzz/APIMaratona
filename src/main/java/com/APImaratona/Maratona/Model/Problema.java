@@ -6,13 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serializable;
 import java.util.List;
 
+// Serial para usar o redis
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "problemas")
-public class Problema {
+public class Problema implements Serializable {
     @Id
     private String idProblema;
 
