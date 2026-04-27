@@ -10,4 +10,6 @@ public class UsuarioResponseDTO implements Serializable  {
     private String nomeUsuario;
     private String email;
     private String nomeTime;
+    private String rank;
+    private int rating;
 }

@@ -23,6 +23,8 @@ public class Usuario {
 
     @Column (unique = true)
     private String nomeUsuario;
+    private String rank;
+    private int rating;
 
     // N:1 varias pessoas pertencem a um time
     @ManyToOne

@@ -2,10 +2,10 @@ package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesResponseDTO;
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUsuarioDTO;
+import com.APImaratona.Maratona.DTO.Codeforces.CodefrocesUsuarioResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -44,7 +44,28 @@ public class CodeforcesService {
                 log.info("Sincronização concluída para: {}", nomeUsuarioCodeforces);
             }
         } catch (Exception e) {
-            log.error("Erro ao comunicar com a API do Codeforces para o utilizador: " + nomeUsuarioCodeforces, e);
+            log.error("Erro ao comunicar com a API do Codeforces para o utilizador: {}", nomeUsuarioCodeforces, e);
         }
     }
+
+    public CodeforcesUsuarioDTO infoPerfilUsuario(String nomeUsuarioCodeForces){
+        CodeforcesUsuarioDTO cfUsuario = new CodeforcesUsuarioDTO();
+
+        String url = "https://codeforces.com/api/user.info?handles=" + nomeUsuarioCodeForces;
+
+        try {
+            log.info("Adquirindo informações do usuário {}", nomeUsuarioCodeForces);
+            CodefrocesUsuarioResponseDTO resposta = restTemplate.getForObject(url, CodefrocesUsuarioResponseDTO.class);
+
+            if(resposta != null && "OK".equals(resposta.getStatus())){
+                cfUsuario = resposta.getResult().get(0);
+            }
+
+        } catch (Exception e) {
+            log.error("Erro ao comunicar com a API do Codeforces para o utilizador: {}", nomeUsuarioCodeForces, e);
+        }
+
+        return cfUsuario;
+    }
+
 }

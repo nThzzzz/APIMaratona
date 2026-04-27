@@ -1,5 +1,6 @@
 package com.APImaratona.Maratona.Services;
 
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUsuarioDTO;
 import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
@@ -8,7 +9,6 @@ import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
-import com.APImaratona.Maratona.Model.UsuarioNode;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
@@ -71,6 +71,11 @@ public class UsuarioService {
             }
         }
 
+        CodeforcesUsuarioDTO cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
+
+        usuario.setRating(cfUsuario.getRating());
+        usuario.setRank(cfUsuario.getRank());
+
         usuarioRepo.save(usuario);
     }
 
@@ -86,6 +91,8 @@ public class UsuarioService {
             usuarioDTO.setNomeUsuario(u.getNomeUsuario());
             usuarioDTO.setEmail(u.getEmail());
             usuarioDTO.setNomeTime(u.getTime() != null ? u.getTime().getNome() : "Sem time");
+            usuarioDTO.setRank(u.getRank());
+            usuarioDTO.setRating(u.getRating());
 
             listaUsuarios.add(usuarioDTO);
         }
@@ -106,6 +113,8 @@ public class UsuarioService {
         usuarioDTO.setEmail(usuario.getEmail());
         usuarioDTO.setNomeUsuario(usuario.getNomeUsuario());
         usuarioDTO.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
+        usuarioDTO.setRank(usuario.getRank());
+        usuarioDTO.setRating(usuario.getRating());
 
         return usuarioDTO;
     }
@@ -123,6 +132,8 @@ public class UsuarioService {
         usuarioDTO.setEmail(usuario.getEmail());
         usuarioDTO.setNomeUsuario(usuario.getNomeUsuario());
         usuarioDTO.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
+        usuarioDTO.setRank(usuario.getRank());
+        usuarioDTO.setRating(usuario.getRating());
 
         return usuarioDTO;
     }
@@ -192,6 +203,10 @@ public class UsuarioService {
             usuario.setNomeUsuario(dto.getNomeUsuario());
             usuarioNodeRepository.deleteById(dto.getNomeUsuario());
             codeforcesService.sincronizarPerfilCodeforces(usuario.getNomeUsuario());
+
+            CodeforcesUsuarioDTO cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
+            usuario.setRank(cfUsuario.getRank());
+            usuario.setRating(cfUsuario.getRating());
 
             resultado += "| Nome de Usuario |";
         }

@@ -16,14 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.*;
 
 @Slf4j // Para usar o log.info em vez do print
@@ -147,7 +144,7 @@ public class ProblemasService {
                     .header("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
                     .header("Connection", "keep-alive")
-                    .timeout(10000)
+                    .timeout(1000)
                     .get();
 
             Element problemStatement = doc.selectFirst("div.problem-statement");
@@ -169,4 +166,15 @@ public class ProblemasService {
 
         return problema;
     }
+
+
+//    Problema recomendarProblemas(String nomeUsuario){
+//        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
+//
+//        ProblemaNode problemaNode = (ProblemaNode) problemaNodeRepository.recomendacaoComBaseTime(nomeUsuario, usuario.get);
+//
+//        Problema problema = problemaRepository.findByIdProblema(problemaNode.getIdProblema());
+//
+//        return problema;
+//    }
 }
