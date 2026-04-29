@@ -36,9 +36,13 @@ public class ControllerProblemas {
         return problemasService.problemasFeitosPor(nomeUsuario);
     }
 
-//    @GetMapping("/recomendarProblema/{nomeUsuario}")
-//    public Problema recomendarProblema(@PathVariable String nomeUsuario){
-//        return problemasService.recomendarProblemas(nomeUsuario);
-//    }
+    @GetMapping("/recomendarProblemaSimilaridade/{nomeUsuario}")
+    public List<Problema> recomendarProblemaSimilaridade(@PathVariable String nomeUsuario){
+        return problemasService.recomendarPorSimilaridade(nomeUsuario);
+    }
 
+    @GetMapping("/recomendarProblemaRating/{nomeUsuario}")
+    public List<Problema> recomendarProblemaRating(@PathVariable String nomeUsuario){
+        return problemasService.recomendarProblemasComBaseRating(nomeUsuario);
+    }
 }

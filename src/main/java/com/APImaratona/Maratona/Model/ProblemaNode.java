@@ -17,6 +17,8 @@ public class ProblemaNode {
 
     @Id
     private String idProblema;
+    private int rating;
+
 
     // Olha a relacao de tras pra frente ICOMING
     @Relationship(type = "RESOLVEU", direction = Relationship.Direction.INCOMING)

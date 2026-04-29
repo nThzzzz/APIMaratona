@@ -38,7 +38,7 @@ public class ProblemasService {
         List<String> tags = submissao.getProblem().getTags();
 
         try {
-            usuarioNodeRepository.registrarResolucao(nomeUsuario, idProblema);
+            usuarioNodeRepository.registrarResolucao(nomeUsuario, idProblema, submissao.getProblem().getRating());
         }catch (Exception e){
             log.info("Erro: {}", e.getMessage());
         }
@@ -85,6 +85,8 @@ public class ProblemasService {
                 dto.setEmail(usuario.getEmail());
                 dto.setNomeUsuario(usuario.getNomeUsuario());
                 dto.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
+                dto.setRating(usuario.getRating());
+                dto.setRank(usuario.getRank());
 
                 usuariosDTO.add(dto);
             }
@@ -168,13 +170,37 @@ public class ProblemasService {
     }
 
 
-//    Problema recomendarProblemas(String nomeUsuario){
-//        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
-//
-//        ProblemaNode problemaNode = (ProblemaNode) problemaNodeRepository.recomendacaoComBaseTime(nomeUsuario, usuario.get);
-//
-//        Problema problema = problemaRepository.findByIdProblema(problemaNode.getIdProblema());
-//
-//        return problema;
-//    }
+    public List<Problema> recomendarProblemasComBaseRating(String nomeUsuario){
+        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
+        List<Problema> problemas = new ArrayList<>();
+        int maxRating, minRating, limite;
+        maxRating = usuario.getRating()+400;
+        minRating = usuario.getRating()-400;
+        limite = 5;
+
+        List<String> nomeProblemas = problemaNodeRepository.recomendarPopularesPorRating(nomeUsuario, minRating, maxRating, limite);
+
+        for(String nome : nomeProblemas){
+            problemas.add(problemaRepository.findByIdProblema(nome));
+        }
+
+        return problemas;
+    }
+
+    public List<Problema> recomendarPorSimilaridade(String nomeUsuario){
+        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
+        List<Problema> problemas = new ArrayList<>();
+        int maxRating, minRating, limite;
+        maxRating = usuario.getRating()+400;
+        minRating = usuario.getRating()-400;
+        limite = 5;
+
+        List<String> nomeProblemas = problemaNodeRepository.recomendarPorSimilaridade(nomeUsuario, minRating, maxRating, limite);
+
+        for(String nome : nomeProblemas){
+            problemas.add(problemaRepository.findByIdProblema(nome));
+        }
+
+        return problemas;
+    }
 }

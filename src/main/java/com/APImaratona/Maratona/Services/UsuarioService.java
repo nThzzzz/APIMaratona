@@ -140,7 +140,7 @@ public class UsuarioService {
 
     // Para atualizar o cache caso tenha excluido um usuario
     @Caching(evict = {
-            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true), // Nome exato!
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
     })
     public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto){
@@ -179,7 +179,7 @@ public class UsuarioService {
     }
 
     @Caching(evict = {
-            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true), // Nome exato!
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
     })
     public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto){
