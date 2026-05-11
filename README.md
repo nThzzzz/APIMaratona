@@ -68,10 +68,3 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 | `GET` | `/recomendarProblemaSimilaridade/{nome}`| Recomenda problemas via Filtro Colaborativo (Neo4j). |
 | `GET` | `/recomendarProblemaRating/{nome}`| Recomenda os problemas mais populares na faixa de rating do usuário. |
 
----
-
-## 🔮 Próximos Passos (Roadmap)
-
-1. **Testes Unitários e de Integração:** Adicionar cobertura de testes com JUnit 5 e Mockito para garantir a estabilidade das regras de negócio.
-2. **Dockerização:** Criar um `Dockerfile` e um `docker-compose.yml` para subir toda a infraestrutura poliglota localmente com um único comando.
-3. **Segurança (Spring Security & JWT):** Substituir a validação manual de senhas por autenticação via Tokens JWT e encriptação de senhas no banco usando BCrypt.
