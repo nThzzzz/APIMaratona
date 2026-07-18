@@ -80,15 +80,7 @@ public class ProblemasService {
             Usuario usuario = usuarioRepository.findByNomeUsuario(uNode.getNomeUsuario());
 
             if (usuario != null) {
-                UsuarioResponseDTO dto = new UsuarioResponseDTO();
-                dto.setNome(usuario.getNome());
-                dto.setEmail(usuario.getEmail());
-                dto.setNomeUsuario(usuario.getNomeUsuario());
-                dto.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
-                dto.setRating(usuario.getRating());
-                dto.setRank(usuario.getRank());
-
-                usuariosDTO.add(dto);
+                usuariosDTO.add(UsuarioResponseDTO.fromEntity(usuario));
             }
         }
 
@@ -175,34 +167,40 @@ public class ProblemasService {
 
 
     public List<Problema> recomendarProblemasComBaseRating(String nomeUsuario){
-        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
-        List<Problema> problemas = new ArrayList<>();
-        int maxRating, minRating, limite;
-        maxRating = usuario.getRating()+400;
-        minRating = usuario.getRating()-400;
-        limite = 5;
+        Usuario usuario = buscarUsuarioValidado(nomeUsuario);
+        int maxRating = usuario.getRating()+400;
+        int minRating = usuario.getRating()-400;
+        int limite = 5;
 
         List<String> nomeProblemas = problemaNodeRepository.recomendarPopularesPorRating(nomeUsuario, minRating, maxRating, limite);
 
-        for(String nome : nomeProblemas){
-            problemas.add(problemaRepository.findByIdProblema(nome));
-        }
-
-        return problemas;
+        return buscarProblemasPorId(nomeProblemas);
     }
 
     public List<Problema> recomendarPorSimilaridade(String nomeUsuario){
-        Usuario usuario = usuarioRepository.findByNomeUsuario(nomeUsuario);
-        List<Problema> problemas = new ArrayList<>();
-        int maxRating, minRating, limite;
-        maxRating = usuario.getRating()+400;
-        minRating = usuario.getRating()-400;
-        limite = 5;
+        Usuario usuario = buscarUsuarioValidado(nomeUsuario);
+        int maxRating = usuario.getRating()+400;
+        int minRating = usuario.getRating()-400;
+        int limite = 5;
 
         List<String> nomeProblemas = problemaNodeRepository.recomendarPorSimilaridade(nomeUsuario, minRating, maxRating, limite);
 
-        for(String nome : nomeProblemas){
-            problemas.add(problemaRepository.findByIdProblema(nome));
+        return buscarProblemasPorId(nomeProblemas);
+    }
+
+    private Usuario buscarUsuarioValidado(String nomeUsuario){
+        if(!usuarioRepository.existsByNomeUsuario(nomeUsuario)){
+            throw new EntidadeNaoEcontrada("Usuário: " + nomeUsuario + ", não encontrado");
+        }
+
+        return usuarioRepository.findByNomeUsuario(nomeUsuario);
+    }
+
+    private List<Problema> buscarProblemasPorId(List<String> idsProblemas){
+        List<Problema> problemas = new ArrayList<>();
+
+        for(String id : idsProblemas){
+            problemas.add(problemaRepository.findByIdProblema(id));
         }
 
         return problemas;

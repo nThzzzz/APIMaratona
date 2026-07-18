@@ -74,14 +74,7 @@ public class TimeService {
             timeDTO.setUsuarios(new ArrayList<>());
 
             for(Usuario u : t.getUsuarios()){
-                UsuarioResponseDTO usarioDTO = new UsuarioResponseDTO();
-
-                usarioDTO.setNome(u.getNome());
-                usarioDTO.setEmail(u.getEmail());
-                usarioDTO.setNomeUsuario(u.getNomeUsuario());
-                usarioDTO.setNomeTime(u.getTime().getNome());
-
-                timeDTO.getUsuarios().add(usarioDTO);
+                timeDTO.getUsuarios().add(UsuarioResponseDTO.fromEntity(u));
             }
             timesDTO.add(timeDTO);
         }
@@ -101,14 +94,7 @@ public class TimeService {
         timeDTO.setUsuarios(new ArrayList<>());
 
         for(Usuario u : time.getUsuarios()){
-            UsuarioResponseDTO usuarioResponseDTO = new UsuarioResponseDTO();
-
-            usuarioResponseDTO.setNome(u.getNome());
-            usuarioResponseDTO.setEmail(u.getEmail());
-            usuarioResponseDTO.setNomeUsuario(u.getNomeUsuario());
-            usuarioResponseDTO.setNomeTime(u.getTime() != null ? u.getTime().getNome() : "Sem time");
-
-            timeDTO.getUsuarios().add(usuarioResponseDTO);
+            timeDTO.getUsuarios().add(UsuarioResponseDTO.fromEntity(u));
         }
 
         return timeDTO;

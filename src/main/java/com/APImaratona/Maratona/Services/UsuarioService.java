@@ -85,57 +85,30 @@ public class UsuarioService {
         List<Usuario> usuarios = usuarioRepo.findAll();
 
         for(Usuario u : usuarios){
-            UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
-
-            usuarioDTO.setNome(u.getNome());
-            usuarioDTO.setNomeUsuario(u.getNomeUsuario());
-            usuarioDTO.setEmail(u.getEmail());
-            usuarioDTO.setNomeTime(u.getTime() != null ? u.getTime().getNome() : "Sem time");
-            usuarioDTO.setRank(u.getRank());
-            usuarioDTO.setRating(u.getRating());
-
-            listaUsuarios.add(usuarioDTO);
+            listaUsuarios.add(UsuarioResponseDTO.fromEntity(u));
         }
 
         return listaUsuarios;
     }
 
     public UsuarioResponseDTO buscarUsuarioNome(String nome){
-        UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
-
         if(!usuarioRepo.existsByNomeUsuario(nome)){
             throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
-        usuarioDTO.setNome(usuario.getNome());
-        usuarioDTO.setEmail(usuario.getEmail());
-        usuarioDTO.setNomeUsuario(usuario.getNomeUsuario());
-        usuarioDTO.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
-        usuarioDTO.setRank(usuario.getRank());
-        usuarioDTO.setRating(usuario.getRating());
-
-        return usuarioDTO;
+        return UsuarioResponseDTO.fromEntity(usuario);
     }
 
     public UsuarioResponseDTO buscarUsuarioEmail(String email){
-        UsuarioResponseDTO usuarioDTO = new UsuarioResponseDTO();
-
         if(!usuarioRepo.existsByEmail(email)){
             throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email);
 
-        usuarioDTO.setNome(usuario.getNome());
-        usuarioDTO.setEmail(usuario.getEmail());
-        usuarioDTO.setNomeUsuario(usuario.getNomeUsuario());
-        usuarioDTO.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
-        usuarioDTO.setRank(usuario.getRank());
-        usuarioDTO.setRating(usuario.getRating());
-
-        return usuarioDTO;
+        return UsuarioResponseDTO.fromEntity(usuario);
     }
 
     // Para atualizar o cache caso tenha excluido um usuario
