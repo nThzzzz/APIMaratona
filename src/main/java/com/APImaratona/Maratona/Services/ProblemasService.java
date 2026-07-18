@@ -106,6 +106,10 @@ public class ProblemasService {
 
         Optional<UsuarioNode> problemas = usuarioNodeRepository.findById(nomeUsuario);
 
+        if (problemas.isEmpty()) {
+            return listaProblemas; // Retorna vazio se o usuario ainda nao tem nada no grafo
+        }
+
         Set<ProblemaNode> problemasResolvidos = problemas.get().getProblemasResolvidos();
 
         for(ProblemaNode pb : problemasResolvidos){

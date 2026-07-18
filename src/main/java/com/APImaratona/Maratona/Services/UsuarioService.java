@@ -148,7 +148,7 @@ public class UsuarioService {
             throw new RegraDeNegocio("Senha = NULL");
         }
 
-        Usuario u = new Usuario();
+        Usuario u;
 
         //verifica se é por nome
         if(dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank()){
@@ -163,6 +163,8 @@ public class UsuarioService {
             }
 
             u = usuarioRepo.findByEmail(dto.getEmail());
+        }else{
+            throw new RegraDeNegocio("Nenhum identificador de usuario (nomeUsuario ou email) fornecido");
         }
 
         if(verificaSenha(u.getSenha(), dto.getSenha())){

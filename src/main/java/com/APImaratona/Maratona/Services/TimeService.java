@@ -36,12 +36,14 @@ public class TimeService {
             throw new RuntimeException("Nome de time ja utilizado");
         }
 
-        if(dto.getNomesUsuarios().size()>3){
-            throw new RuntimeException("Lista de membros do time maior que o permitido, tamanho= " + dto.getNomesUsuarios().size());
+        List<String> nomesUsuarios = dto.getNomesUsuarios() != null ? dto.getNomesUsuarios() : new ArrayList<>();
+
+        if(nomesUsuarios.size()>3){
+            throw new RuntimeException("Lista de membros do time maior que o permitido, tamanho= " + nomesUsuarios.size());
         }
 
-        if(!dto.getNomesUsuarios().isEmpty()) {
-            for(String nome : dto.getNomesUsuarios()){
+        if(!nomesUsuarios.isEmpty()) {
+            for(String nome : nomesUsuarios){
                 if(!usuarioRepo.existsByNomeUsuario(nome)){
                     throw new RuntimeException("Usuario: " + nome + ", nao econtrado");
                 }
@@ -138,7 +140,7 @@ public class TimeService {
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
-        if(dto.getNomesUsuarios().isEmpty()){
+        if(dto.getNomesUsuarios() == null || dto.getNomesUsuarios().isEmpty()){
             throw new RegraDeNegocio("Nenhum usuario para adicionar");
         }
 
@@ -177,7 +179,7 @@ public class TimeService {
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
-        if(dto.getNomesUsuarios().isEmpty()){
+        if(dto.getNomesUsuarios() == null || dto.getNomesUsuarios().isEmpty()){
             throw new RegraDeNegocio("Nenhum usuario para remover");
         }
 
@@ -188,7 +190,7 @@ public class TimeService {
 
             Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
-            if(!usuario.getTime().getNome().equals(time.getNome())){
+            if(usuario.getTime() == null || !usuario.getTime().getNome().equals(time.getNome())){
                 throw new RegraDeNegocio("Usuario: " + usuario.getNome() + ", nao esta no Time: " +
                         time.getNome());
             }
