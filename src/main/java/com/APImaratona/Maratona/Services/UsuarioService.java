@@ -202,8 +202,9 @@ public class UsuarioService {
             if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
                 throw new RegraDeNegocio("Nome de usuário ja em uso");
             }
+            String nomeUsuarioAntigo = usuario.getNomeUsuario();
             usuario.setNomeUsuario(dto.getNomeUsuario());
-            usuarioNodeRepository.deleteById(dto.getNomeUsuario());
+            usuarioNodeRepository.deleteById(nomeUsuarioAntigo);
             codeforcesService.sincronizarPerfilCodeforces(usuario.getNomeUsuario());
 
             CodeforcesUsuarioDTO cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
