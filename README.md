@@ -13,6 +13,7 @@ Um sistema backend robusto desenvolvido em **Java com Spring Boot** para gerenci
 * **Neo4j** (NoSQL Grafos) - Motor de recomendação e mapeamento de relações complexas (`(Usuário)-[:RESOLVEU]->(Problema)`).
 * **Redis** (In-Memory Cache) - Cache distribuído de alta performance para listagens e consultas frequentes.
 * **Spring Data / Hibernate** (JPA, MongoRepository, Neo4jRepository)
+* **Spring Security + JWT** (`io.jsonwebtoken`/jjwt) - Autenticação stateless via token Bearer, com senhas protegidas por hash **BCrypt**.
 * **Jsoup** (Web Scraping)
 * **Lombok & Maven**
 
@@ -27,11 +28,31 @@ O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padr
 * **Motor de Recomendação:** Consultas complexas em linguagem Cypher (Neo4j) para recomendar problemas baseados em similaridade de resolução (Filtro Colaborativo) e popularidade por faixa de rating.
 * **Gerenciamento de Cache Cirúrgico:** Uso avançado das anotações `@Cacheable` e `@Caching(evict = ...)` para entregar respostas em milissegundos via Redis, garantindo a invalidação inteligente apenas das chaves afetadas durante atualizações (evitando "cache stale").
 * **Transações Poliglotas:** Gerenciadores de transação isolados (`@Primary` para o Postgres e um específico para o Neo4j), prevenindo esgotamento de *Connection Pools* e garantindo a integridade entre os diferentes bancos de dados.
+* **Autenticação Stateless (JWT):** `POST /auth/login` emite um token assinado (jjwt) validado a cada requisição por um filtro do Spring Security (`JwtAuthenticationFilter`), sem sessão ou cookie. Senhas são persistidas com hash **BCrypt**, nunca em texto puro.
 * **Tratamento de Exceções Global:** Um `@RestControllerAdvice` intercepta regras de negócio e erros de banco, padronizando as respostas HTTP (`400 Bad Request`, `404 Not Found`) através do padrão DTO.
 
 ---
 
+## 🔐 Autenticação e Segurança
+
+A API usa **Spring Security + JWT** (stateless, sem sessão/cookie) para proteger as operações mais sensíveis sobre a própria conta do usuário.
+
+* **Login:** `POST /auth/login` recebe `nomeUsuario` e `senha` e devolve `{ "token": "...", "tipo": "Bearer" }`.
+* **Uso do token:** envie o header `Authorization: Bearer <token>` nas rotas protegidas. Um filtro (`JwtAuthenticationFilter`) valida o token em toda requisição; se estiver ausente, inválido ou expirado, a rota protegida responde `401` com um corpo JSON padronizado (`JwtAuthenticationEntryPoint`).
+* **Dono do recurso:** o `nomeUsuario` contido no token precisa ser o mesmo da conta alvo da operação — token válido de outro usuário também resulta em `401`.
+* **Senhas:** armazenadas com hash **BCrypt**, nunca em texto puro.
+* **Escopo atual (deliberadamente reduzido):** por enquanto só `PUT /editarUsuario/{nomeUsuario}` e `DELETE /excluirUsuario` (marcadas com 🔒 abaixo) exigem token. O restante da API (cadastro, listagens, times, problemas) permanece público — endurecer essas rotas, CORS, rate limiting e papéis/permissões ficam para uma próxima etapa.
+
+---
+
 ## 📡 Documentação da API (Endpoints)
+
+### 🔑 Autenticação (`/auth`)
+Emite o token JWT usado nas rotas protegidas.
+
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| `POST` | `/auth/login` | Autentica com `nomeUsuario`/`senha` e retorna o token JWT. |
 
 ### 👤 Usuários (`/`)
 Gerencia o cadastro, edição e exclusão de competidores.
@@ -41,8 +62,8 @@ Gerencia o cadastro, edição e exclusão de competidores.
 | `POST` | `/cadastro` | Cadastra um usuário e dispara a sync do Codeforces. |
 | `GET` | `/listaUsuarios` | Retorna todos os usuários (sem expor senhas). |
 | `GET` | `/buscarUsuario` | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
-| `PUT` | `/editarUsuario/{nomeUsuario}` | Edita os dados e/ou o time do usuário. |
-| `DELETE` | `/excluirUsuario` | Exclui o usuário validando a senha antiga. |
+| `PUT` | `/editarUsuario/{nomeUsuario}` | 🔒 Edita os dados e/ou o time do usuário (requer Bearer token do próprio usuário). |
+| `DELETE` | `/excluirUsuario` | 🔒 Exclui o usuário validando a senha antiga (requer Bearer token do próprio usuário). |
 
 ### 🛡️ Times (`/`)
 Gerencia os times (limitados a 3 integrantes).
@@ -67,4 +88,30 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 | `GET` | `/problemasFeitorPor/{nomeUsuario}`| Lista as questões resolvidas por um usuário. |
 | `GET` | `/recomendarProblemaSimilaridade/{nome}`| Recomenda problemas via Filtro Colaborativo (Neo4j). |
 | `GET` | `/recomendarProblemaRating/{nome}`| Recomenda os problemas mais populares na faixa de rating do usuário. |
+
+---
+
+## 🧪 Testes
+
+A suíte é pensada para rodar **sem depender de infraestrutura real** (Postgres/Mongo/Neo4j/Redis) no dia a dia:
+
+* **Testes de controller** (`@WebMvcTest`, services mockados com Mockito) cobrem o contrato HTTP de cada controller. Em especial, `ControllerUsuarioSecurityTest` sobe a cadeia **real** do Spring Security (`SecurityConfig` + `JwtAuthenticationFilter` + `JwtService`) para validar `401` sem token, `401` com token inválido e `200` com um token válido de verdade — usando um `jwt.secret` de teste via `@TestPropertySource`, sem tocar em nenhum banco.
+* **`JwtServiceTest`** é um teste unitário puro (sem contexto Spring) da geração/validação do token: caminho feliz, token malformado, expirado e assinado com outro segredo.
+* **`MaratonaApplicationTests`** (`contextLoads`) sobe o contexto completo da aplicação e por isso exige Postgres/Mongo/Neo4j/Redis e um `JWT_SECRET` reais. É marcado com `@Tag("integration")` e fica de fora do `./mvnw test` padrão.
+
+### Rodando localmente
+
+```bash
+./mvnw test
+```
+
+Esse comando roda os testes de controller e o `JwtServiceTest` (49 testes), sem precisar de nenhuma variável de ambiente ou banco configurado. Para incluir também o teste de integração (contexto completo):
+
+```bash
+./mvnw test -DexcludedGroups=
+```
+
+Cada execução gera um relatório HTML com todas as chamadas de API feitas pelos testes de controller (requisição, resposta, headers, status e duração) em `target/api-test-report/relatorio.html`.
+
+O GitHub Actions (`.github/workflows/tests.yml`) roda `./mvnw test` a cada push/PR em qualquer branch, sempre com a suíte padrão (sem o teste de integração).
 
