@@ -111,6 +111,14 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Necessario para testar a cadeia real do Spring Security (springSecurityFilterChain)
+		     dentro de um slice @WebMvcTest; sem isso o MockMvc nao aplica o filtro de autorizacao. -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

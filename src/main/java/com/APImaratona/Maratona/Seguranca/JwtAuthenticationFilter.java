@@ -6,7 +6,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -23,6 +25,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final SecurityContextRepository securityContextRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -40,7 +43,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 var autenticacao = new UsernamePasswordAuthenticationToken(
                         nomeUsuario, null, Collections.emptyList());
 
-                SecurityContextHolder.getContext().setAuthentication(autenticacao);
+                SecurityContext contexto = SecurityContextHolder.createEmptyContext();
+                contexto.setAuthentication(autenticacao);
+                SecurityContextHolder.setContext(contexto);
+
+                // Com sessao STATELESS o SecurityContextHolderFilter usa um repositorio
+                // (RequestAttributeSecurityContextRepository) que carrega o contexto sob demanda;
+                // sem salvar aqui, filtros seguintes (ex: AnonymousAuthenticationFilter) recarregam
+                // um contexto vazio e sobrescrevem a autenticacao que acabamos de setar.
+                securityContextRepository.saveContext(contexto, request, response);
             }
         }
 

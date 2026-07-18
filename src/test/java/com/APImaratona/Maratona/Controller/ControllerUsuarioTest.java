@@ -8,6 +8,7 @@ import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Seguranca.JwtService;
+import org.springframework.security.web.context.SecurityContextRepository;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
 import com.APImaratona.Maratona.support.ApiControllerTestSupport;
@@ -52,6 +53,9 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     // mesmo com addFilters=false; sem esse mock o contexto no sobe por falta de JwtService.
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private SecurityContextRepository securityContextRepository;
 
     @Override
     protected String nomeControlador() {

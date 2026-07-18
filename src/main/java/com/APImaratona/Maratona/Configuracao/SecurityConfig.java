@@ -14,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 // Wiring central de seguranca: define o que exige login (authorizeHttpRequests),
 // registra o filtro de JWT (passo antes do UsernamePasswordAuthenticationFilter padrao
@@ -34,11 +36,24 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Com sessao STATELESS o Spring Security carrega o SecurityContext sob demanda a cada
+    // filtro (nao fica em memoria entre eles); por isso precisa de um repositorio explicito
+    // aqui, tambem injetado no JwtAuthenticationFilter, para que a autenticacao setada la
+    // sobreviva ate o AuthorizationFilter (senao o AnonymousAuthenticationFilter recarrega
+    // um contexto vazio e sobrescreve). Estatico de proposito: JwtAuthenticationFilter
+    // depende deste bean no construtor, e SecurityConfig depende de JwtAuthenticationFilter
+    // no seu -- um metodo @Bean nao-estatico criaria uma dependencia circular.
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public static SecurityContextRepository securityContextRepository() {
+        return new RequestAttributeSecurityContextRepository();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable) // API stateless com token, sem cookie/sessao de browser
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
             .authorizeHttpRequests(auth -> auth
                     // por enquanto so essas duas rotas exigem token valido
                     .requestMatchers(HttpMethod.PUT, "/editarUsuario/**").authenticated()
