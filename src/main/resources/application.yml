@@ -25,3 +25,7 @@ spring:
     authentication:
       username: ${NEO4J_USUARIO}
       password: ${NEO4J_SENHA}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiracao-ms: 3600000 # 1 hora

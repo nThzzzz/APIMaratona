@@ -34,6 +34,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
     }
 
+    // Captura falha de login ou token usado contra a conta errada, retorna 401 (UNAUTHORIZED)
+    @ExceptionHandler(AutenticacaoInvalidaException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAutenticacaoInvalida(AutenticacaoInvalidaException ex) {
+        ErrorResponseDTO erro = new ErrorResponseDTO(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Falha de Autenticação",
+                ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
+    }
+
     // Opcional: Captura qualquer outro erro que não prevemos e retorna 500
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleErroGenerico(Exception ex) {

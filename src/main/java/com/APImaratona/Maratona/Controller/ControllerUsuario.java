@@ -7,6 +7,7 @@ import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -49,15 +50,18 @@ public class ControllerUsuario {
         throw new RuntimeException("Nenhum parametro fornecido");
     }
 
+    // "Authentication authentication" e resolvido automaticamente pelo Spring a partir
+    // do token JWT validado no JwtAuthenticationFilter -- nao precisa de anotacao extra.
     @PutMapping("/editarUsuario/{nomeUsuario}")
-    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioRequisicaoDTO dto){
-        String resultado = usuarioService.editarUsuario(nomeUsuario, dto);
+    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioRequisicaoDTO dto,
+                                 Authentication authentication){
+        String resultado = usuarioService.editarUsuario(nomeUsuario, dto, authentication.getName());
         return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
     }
 
     @DeleteMapping("/excluirUsuario")
-    public String excluirUsuario(@RequestBody ExcluirUsuarioRequisicaoDTO dto){
-        usuarioService.excluirUsuario(dto);
+    public String excluirUsuario(@RequestBody ExcluirUsuarioRequisicaoDTO dto, Authentication authentication){
+        usuarioService.excluirUsuario(dto, authentication.getName());
         return "Usuario excluido com sucesso";
     }
 

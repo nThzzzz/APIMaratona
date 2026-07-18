@@ -5,6 +5,7 @@ import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
@@ -15,6 +16,7 @@ import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ public class UsuarioService {
     private final TimeRepository timeRepo;
     private final UsuarioNodeRepository usuarioNodeRepository;
     private final CodeforcesService codeforcesService;
+    private final PasswordEncoder passwordEncoder;
 
     @Caching(evict = {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
@@ -41,7 +44,7 @@ public class UsuarioService {
         // Fazer verificacao e tratamento
         usuario.setNome(dto.getNome());
         usuario.setNomeUsuario(dto.getNomeUsuario());
-        usuario.setSenha(dto.getSenha());
+        usuario.setSenha(passwordEncoder.encode(dto.getSenha())); // nunca grava senha em texto puro
         usuario.setEmail(dto.getEmail());
 
         if(usuarioRepo.existsByEmail(dto.getEmail())){
@@ -116,7 +119,7 @@ public class UsuarioService {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
     })
-    public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto){
+    public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto, String nomeUsuarioAutenticado){
         if(dto.getSenha() == null){
             throw new RegraDeNegocio("Senha = NULL");
         }
@@ -140,6 +143,12 @@ public class UsuarioService {
             throw new RegraDeNegocio("Nenhum identificador de usuario (nomeUsuario ou email) fornecido");
         }
 
+        // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
+        // mesmo que a senha informada por algum motivo bata com a de outra conta.
+        if(!u.getNomeUsuario().equals(nomeUsuarioAutenticado)){
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
         if(verificaSenha(u.getSenha(), dto.getSenha())){
             if(u.getTime() != null) {
                 u.getTime().getUsuarios().remove(u);
@@ -157,11 +166,16 @@ public class UsuarioService {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
     })
-    public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto){
+    public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto, String nomeUsuarioAutenticado){
         String resultado = "";
 
         if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
             throw new EntidadeNaoEcontrada("Usuario: " + nomeUsuario + ", nao encontrado");
+        }
+
+        // O token JWT prova quem esta chamando; so deixa editar a propria conta.
+        if(!nomeUsuario.equals(nomeUsuarioAutenticado)){
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
@@ -203,8 +217,8 @@ public class UsuarioService {
         }
 
         // Validação da Senha Nova
-        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !usuario.getSenha().equals(dto.getSenhaNova())) {
-            usuario.setSenha(dto.getSenhaNova());
+        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !passwordEncoder.matches(dto.getSenhaNova(), usuario.getSenha())) {
+            usuario.setSenha(passwordEncoder.encode(dto.getSenhaNova()));
             resultado += "| Senha |";
         }
 
@@ -247,6 +261,10 @@ public class UsuarioService {
     }
 
     private boolean verificaSenha(String senhaCerto, String senha){
-        return senhaCerto.equals(senha);
+        try {
+            return passwordEncoder.matches(senha, senhaCerto);
+        } catch (IllegalArgumentException e) {
+            return false; // hash salvo nao e um BCrypt valido (conta antiga em texto puro)
+        }
     }
 }
