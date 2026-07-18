@@ -3,11 +3,13 @@ package com.APImaratona.Maratona.Controller;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Model.Problema;
+import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Services.ProblemasService;
 import com.APImaratona.Maratona.support.ApiControllerTestSupport;
 import com.APImaratona.Maratona.support.TestCacheConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,11 +22,17 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @WebMvcTest(ControllerProblemas.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(TestCacheConfig.class)
 class ControllerProblemasTest extends ApiControllerTestSupport {
 
     @MockitoBean
     private ProblemasService problemasService;
+
+    // JwtAuthenticationFilter e um Filter (@Component) e por isso e escaneado pelo @WebMvcTest
+    // mesmo com addFilters=false; sem esse mock o contexto no sobe por falta de JwtService.
+    @MockitoBean
+    private JwtService jwtService;
 
     @Override
     protected String nomeControlador() {

@@ -4,16 +4,20 @@ import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
+import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
 import com.APImaratona.Maratona.support.ApiControllerTestSupport;
 import com.APImaratona.Maratona.support.TestCacheConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -34,6 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 @WebMvcTest(ControllerUsuario.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(TestCacheConfig.class)
 class ControllerUsuarioTest extends ApiControllerTestSupport {
 
@@ -42,6 +47,11 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
 
     @MockitoBean
     private CodeforcesService codeforcesService;
+
+    // JwtAuthenticationFilter e um Filter (@Component) e por isso e escaneado pelo @WebMvcTest
+    // mesmo com addFilters=false; sem esse mock o contexto no sobe por falta de JwtService.
+    @MockitoBean
+    private JwtService jwtService;
 
     @Override
     protected String nomeControlador() {
@@ -171,9 +181,10 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         dto.setSenhaAntiga("senha123");
         dto.setNome("Fulano Editado");
 
-        when(usuarioService.editarUsuario(eq("fulano"), any())).thenReturn("| Nome |");
+        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");
 
-        MvcResult resultado = chamar("Edicao de nome com sucesso", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Edicao de nome com sucesso (autenticado como fulano)", put("/editarUsuario/fulano")
+                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
@@ -187,13 +198,31 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         EditarUsuarioRequisicaoDTO dto = new EditarUsuarioRequisicaoDTO();
         dto.setSenhaAntiga("errada");
 
-        when(usuarioService.editarUsuario(eq("fulano"), any())).thenThrow(new RegraDeNegocio("Senha incorreta"));
+        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("fulano"))).thenThrow(new RegraDeNegocio("Senha incorreta"));
 
-        MvcResult resultado = chamar("Senha antiga incorreta", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Senha antiga incorreta (autenticado como fulano)", put("/editarUsuario/fulano")
+                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("PUT /editarUsuario/{nomeUsuario} com token de outro usuario retorna 401")
+    void editarUsuarioTokenNaoCorresponde() throws Exception {
+        EditarUsuarioRequisicaoDTO dto = new EditarUsuarioRequisicaoDTO();
+        dto.setSenhaAntiga("senha123");
+
+        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("outraPessoa")))
+                .thenThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"));
+
+        MvcResult resultado = chamar("Token de outro usuario tentando editar fulano", put("/editarUsuario/fulano")
+                .principal(new UsernamePasswordAuthenticationToken("outraPessoa", null))
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
     }
 
     @Test
@@ -203,9 +232,10 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         dto.setNomeUsuario("fulano");
         dto.setSenha("senha123");
 
-        doNothing().when(usuarioService).excluirUsuario(any());
+        doNothing().when(usuarioService).excluirUsuario(any(), eq("fulano"));
 
-        MvcResult resultado = chamar("Exclusao com sucesso", delete("/excluirUsuario")
+        MvcResult resultado = chamar("Exclusao com sucesso (autenticado como fulano)", delete("/excluirUsuario")
+                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
@@ -219,12 +249,31 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         dto.setNomeUsuario("fulano");
         dto.setSenha("errada");
 
-        doThrow(new RegraDeNegocio("Senha incorreta")).when(usuarioService).excluirUsuario(any());
+        doThrow(new RegraDeNegocio("Senha incorreta")).when(usuarioService).excluirUsuario(any(), eq("fulano"));
 
-        MvcResult resultado = chamar("Senha incorreta", delete("/excluirUsuario")
+        MvcResult resultado = chamar("Senha incorreta (autenticado como fulano)", delete("/excluirUsuario")
+                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("DELETE /excluirUsuario com token de outro usuario retorna 401")
+    void excluirUsuarioTokenNaoCorresponde() throws Exception {
+        ExcluirUsuarioRequisicaoDTO dto = new ExcluirUsuarioRequisicaoDTO();
+        dto.setNomeUsuario("fulano");
+        dto.setSenha("senha123");
+
+        doThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"))
+                .when(usuarioService).excluirUsuario(any(), eq("outraPessoa"));
+
+        MvcResult resultado = chamar("Token de outro usuario tentando excluir fulano", delete("/excluirUsuario")
+                .principal(new UsernamePasswordAuthenticationToken("outraPessoa", null))
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
     }
 }
