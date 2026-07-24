@@ -1,0 +1,544 @@
+{
+  "info": {
+    "_postman_id": "9c933be1-9f89-4d4a-b0c7-8477a8f5c4ef",
+    "name": "MaratonaAPI",
+    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53834297",
+    "_collection_link": "https://go.postman.co/collection/53834297-9c933be1-9f89-4d4a-b0c7-8477a8f5c4ef?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Usuario",
+      "item": [
+        {
+          "name": "ExcluirUsuario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senha\": \"123\"\n}\n\n/*\n\n{\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\" OU \"emailUsuario\" : \"zanvetor@email.com\"\n}\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/excluirUsuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirUsuario"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BuscarEmailUsuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/buscarUsuario?email=a@email.com",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "buscarUsuario"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "a@email.com"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BuscarNomeUsuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/buscarUsuario?nomeUsuario=becastal",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "buscarUsuario"
+              ],
+              "query": [
+                {
+                  "key": "nomeUsuario",
+                  "value": "becastal"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ListarUsuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/listaUsuarios",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "listaUsuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastro",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"art1@email.com\",\n    \"nome\": \"ABZ\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"arthurb.zanvetor\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n\n/* \n\n{\n  \"nome\": \"Arthur Zanvetor\",\n  \"email\": \"arthur@exemplo.com\",\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\",\n  \"nomeTime\": \"Nome do Time\" //opcional \n}\n\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/cadastro",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "cadastro"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "editarUsuario",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"gabrielsa\",\n    \"senhaAntiga\": \"123\"\n}\n\n\n/*\nhttp://localhost:8080/editarUsuario/{nomeUsuario}\n{\n  \"nome\": \"Arthur B. Zanvetor\", // opcional \n  \"email\": \"novoemail@exemplo.com\", // opcional\n  \"nomeUsuario\": \"novo_zanvetor\", // opcional\n  \"nomeTime\": \"Novo Time\", // opcional\n  \"senhaAntiga\": \"senha_segura_123\", // sempre obrigatorio\n  \"senhaNova\": \"nova_senha_321\" // opcional\n}\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/editarUsuario/becastal",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "editarUsuario",
+                "becastal"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "loginUsuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Verifica se o login deu sucesso (Status 200)",
+                  "pm.test(\"Login realizado com sucesso\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Captura o corpo da resposta",
+                  "var resposta = pm.response.json();",
+                  "",
+                  "// Salva o token gerado na variável de ambiente do Postman",
+                  "pm.environment.set(\"token_jwt\", resposta.token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeUsuario\": \"arthurb.zanvetor\",\n  \"senha\": \"123\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Time",
+      "item": [
+        {
+          "name": "CadastroTime",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nomeTime\": \"Time A\",\r\n  \"nomesUsuarios\": []\r\n}\r\n\r\n/*\r\n{\r\n  \"nomeTime\": \"Nome do Time\",\r\n  \"nomesUsuarios\": [\r\n    \"zanvetor\",\r\n    \"usuario2\",\r\n    \"usuario3\"\r\n  ]\r\n}\r\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/cadastroTime",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "cadastroTime"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DeletarTime",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/excluirTime?nome=tim",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirTime"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "tim"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "BuscarTime",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/buscarTime?nome=time1",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "buscarTime"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "time1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "adicionarUsuario",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeTime\": \"time2\",\n  \"nomesUsuarios\": [\"sla_3\"]\n}\n\n/*\n{\n  \"nomeTime\": \"Nome do Time\",\n  \"nomesUsuarios\": [\n    \"novo_integrante\"\n  ]\n}\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/adicionarUsuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "adicionarUsuario"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "removerUsuario",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeTime\": \"time211\",\n  \"nomesUsuarios\": [\"sla1\"]\n}\n\n/*\n{\n  \"nomeTime\": \"Nome do Time\",\n  \"nomesUsuarios\": [\n    \"usuario2\"\n  ]\n}\n*/",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{url}}/removerUsuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "removerUsuario"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ListarTimes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/listarTimes",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "listarTimes"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Problemas",
+      "item": [
+        {
+          "name": "listarProblemas",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/listarProblemas",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "listarProblemas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "buscarProblema",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/4A",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "4A"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "usuariosFizeramProblema",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/usuariosFizeramProblema/4A",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "usuariosFizeramProblema",
+                "4A"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "problemasFeitosPor",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{url}}/problemasFeitorPor/arthurb.zanvetor",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "problemasFeitorPor",
+                "arthurb.zanvetor"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RecomendarProblemaRating",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/recomendarProblemaRating/alexandre.dpierri",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "recomendarProblemaRating",
+                "alexandre.dpierri"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "RecomendarProblemaSimilares",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{url}}/recomendarProblemaSimilaridade/albert__",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "recomendarProblemaSimilaridade",
+                "albert__"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "teste",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/teste",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "teste"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token_jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}

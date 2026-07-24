@@ -1,0 +1,22 @@
+{
+  "id": "d780e5c3-6973-4fb1-8e6c-5abf37be0a18",
+  "name": "APIMaratona",
+  "values": [
+    {
+      "key": "url",
+      "value": "http://localhost:8080",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "token_jwt",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "color": null,
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-07-24T20:24:20.269Z",
+  "_postman_exported_using": "Postman/12.19.6"
+}
