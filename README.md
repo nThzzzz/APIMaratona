@@ -21,7 +21,7 @@ Um sistema backend robusto desenvolvido em **Java com Spring Boot** para gerenci
 
 ## 🏗️ Arquitetura e Destaques de Engenharia
 
-O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padrão do Spring (Controller, Service, Repository, Model), com separação estrita de responsabilidades.
+O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padrão do Spring (Controller, Service, Repository, Model), com separação estrita de responsabilidades e aplicação prática do Princípio da Responsabilidade Única (SRP).
 
 ### ⚙️ Funcionalidades Avançadas:
 * **Sincronização com Codeforces:** Integração via `RestTemplate` para buscar submissões aprovadas em background (`@Async`), aliada a um **Web Scraper (Jsoup)** que extrai o texto original do problema diretamente do site.
@@ -35,13 +35,13 @@ O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padr
 
 ## 🔐 Autenticação e Segurança
 
-A API usa **Spring Security + JWT** (stateless, sem sessão/cookie) para proteger as operações mais sensíveis sobre a própria conta do usuário.
+A API usa **Spring Security + JWT** (stateless, sem sessão/cookie) para proteger as operações mais sensíveis sobre a própria conta do usuário. A arquitetura de segurança aplica o conceito de **Defesa em Profundidade**:
 
 * **Login:** `POST /auth/login` recebe `nomeUsuario` e `senha` e devolve `{ "token": "...", "tipo": "Bearer" }`.
 * **Uso do token:** envie o header `Authorization: Bearer <token>` nas rotas protegidas. Um filtro (`JwtAuthenticationFilter`) valida o token em toda requisição; se estiver ausente, inválido ou expirado, a rota protegida responde `401` com um corpo JSON padronizado (`JwtAuthenticationEntryPoint`).
 * **Dono do recurso:** o `nomeUsuario` contido no token precisa ser o mesmo da conta alvo da operação — token válido de outro usuário também resulta em `401`.
-* **Senhas:** armazenadas com hash **BCrypt**, nunca em texto puro.
-* **Escopo atual (deliberadamente reduzido):** por enquanto só `PUT /editarUsuario/{nomeUsuario}` e `DELETE /excluirUsuario` (marcadas com 🔒 abaixo) exigem token. O restante da API (cadastro, listagens, times, problemas) permanece público — endurecer essas rotas, CORS, rate limiting e papéis/permissões ficam para uma próxima etapa.
+* **Senhas (Sudo Mode):** Senhas são armazenadas com hash **BCrypt**. Para operações altamente sensíveis (como alterar e-mail, senha ou excluir a conta), o sistema exige a validação da senha atual no corpo da requisição, mesmo com o token JWT válido.
+* **Escopo atual (deliberadamente reduzido):** por enquanto, as rotas de edição de usuário (`PUT /editarUsuario/**`) e exclusão (`DELETE /excluirUsuario`) (marcadas com 🔒 abaixo) exigem token. O restante da API permanece público.
 
 ---
 
@@ -55,18 +55,19 @@ Emite o token JWT usado nas rotas protegidas.
 | `POST` | `/auth/login` | Autentica com `nomeUsuario`/`senha` e retorna o token JWT. |
 
 ### 👤 Usuários (`/`)
-Gerencia o cadastro, edição e exclusão de competidores.
+Gerencia o cadastro, edição de perfil/credenciais e exclusão de competidores.
 
-| Método | Endpoint | Descrição |
-| :--- | :--- | :--- |
-| `POST` | `/cadastro` | Cadastra um usuário e dispara a sync do Codeforces. |
-| `GET` | `/listaUsuarios` | Retorna todos os usuários (sem expor senhas). |
-| `GET` | `/buscarUsuario` | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
-| `PUT` | `/editarUsuario/{nomeUsuario}` | 🔒 Edita os dados e/ou o time do usuário (requer Bearer token do próprio usuário). |
-| `DELETE` | `/excluirUsuario` | 🔒 Exclui o usuário validando a senha antiga (requer Bearer token do próprio usuário). |
+| Método | Endpoint                                   | Descrição |
+| :--- |:-------------------------------------------| :--- |
+| `POST` | `/cadastro`                                | Cadastra um usuário e dispara a sync do Codeforces. |
+| `GET` | `/listaUsuarios`                           | Retorna todos os usuários (sem expor senhas). |
+| `GET` | `/buscarUsuario`                           | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
+| `PUT` | `/editarUsuario/perfil/{nomeUsuario}`      | 🔒 Edita dados estéticos do perfil (ex: nome). Exige apenas o token JWT válido. |
+| `PUT` | `/editarUsuario/credenciais/{nomeUsuario}` | 🔒 Edita dados sensíveis (e-mail, nome de usuário, nova senha). Exige o token JWT **e** a `senhaAntiga`. |
+| `DELETE` | `/excluirUsuario`                          | 🔒 Exclui o usuário. Exige o token JWT **e** a confirmação da `senha`. |
 
 ### 🛡️ Times (`/`)
-Gerencia os times (limitados a 3 integrantes).
+Gerencia os times (limitados a 3 integrantes) e a entrada/saída de membros.
 
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
@@ -103,15 +104,3 @@ A suíte é pensada para rodar **sem depender de infraestrutura real** (Postgres
 
 ```bash
 ./mvnw test
-```
-
-Esse comando roda os testes de controller e o `JwtServiceTest` (49 testes), sem precisar de nenhuma variável de ambiente ou banco configurado. Para incluir também o teste de integração (contexto completo):
-
-```bash
-./mvnw test -DexcludedGroups=
-```
-
-Cada execução gera um relatório HTML com todas as chamadas de API feitas pelos testes de controller (requisição, resposta, headers, status e duração) em `target/api-test-report/relatorio.html`.
-
-O GitHub Actions (`.github/workflows/tests.yml`) roda `./mvnw test` a cada push/PR em qualquer branch, sempre com a suíte padrão (sem o teste de integração).
-

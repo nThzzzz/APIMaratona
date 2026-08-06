@@ -7,14 +7,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class EditarUsuarioRequisicaoDTO {
+public class EditarUsuarioCredenciaisRequisicaoDTO {
 
-    private String nome;
     private String email;
     private String nomeUsuario;
-    private String nomeTime;
 
-    //senha antiga necessaria
+    // Senha antiga necessaria
     private String senhaAntiga;
     private String senhaNova;
 }

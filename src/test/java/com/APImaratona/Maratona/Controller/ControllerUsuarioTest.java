@@ -1,9 +1,6 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.*;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
@@ -179,15 +176,14 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/{nomeUsuario} com sucesso retorna 200")
+    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario} com sucesso retorna 200")
     void editarUsuarioSucesso() throws Exception {
-        EditarUsuarioRequisicaoDTO dto = new EditarUsuarioRequisicaoDTO();
-        dto.setSenhaAntiga("senha123");
-        dto.setNome("Fulano Editado");
+        EditarUsuarioPerfilRequisicaoDTO dto = new EditarUsuarioPerfilRequisicaoDTO();
+        dto.setNomeNovo("Fulano Editado");
 
-        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");
+        when(usuarioService.editarPerfil(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");
 
-        MvcResult resultado = chamar("Edicao de nome com sucesso (autenticado como fulano)", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Edicao de nome com sucesso (autenticado como fulano)", put("/editarUsuario/perfil/fulano")
                 .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
@@ -197,14 +193,14 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/{nomeUsuario} com senha antiga incorreta retorna 400")
+    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario} com senha antiga incorreta retorna 400")
     void editarUsuarioSenhaErrada() throws Exception {
-        EditarUsuarioRequisicaoDTO dto = new EditarUsuarioRequisicaoDTO();
+        EditarUsuarioCredenciaisRequisicaoDTO dto = new EditarUsuarioCredenciaisRequisicaoDTO();
         dto.setSenhaAntiga("errada");
 
         when(usuarioService.editarUsuario(eq("fulano"), any(), eq("fulano"))).thenThrow(new RegraDeNegocio("Senha incorreta"));
 
-        MvcResult resultado = chamar("Senha antiga incorreta (autenticado como fulano)", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Senha antiga incorreta (autenticado como fulano)", put("/editarUsuario/credenciais/fulano")
                 .principal(new UsernamePasswordAuthenticationToken("fulano", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
@@ -213,15 +209,15 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/{nomeUsuario} com token de outro usuario retorna 401")
+    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario} com token de outro usuario retorna 401")
     void editarUsuarioTokenNaoCorresponde() throws Exception {
-        EditarUsuarioRequisicaoDTO dto = new EditarUsuarioRequisicaoDTO();
+        EditarUsuarioCredenciaisRequisicaoDTO dto = new EditarUsuarioCredenciaisRequisicaoDTO();
         dto.setSenhaAntiga("senha123");
 
         when(usuarioService.editarUsuario(eq("fulano"), any(), eq("outraPessoa")))
                 .thenThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"));
 
-        MvcResult resultado = chamar("Token de outro usuario tentando editar fulano", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Token de outro usuario tentando editar fulano", put("/editarUsuario/credenciais/fulano")
                 .principal(new UsernamePasswordAuthenticationToken("outraPessoa", null))
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));

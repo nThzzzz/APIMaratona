@@ -1,9 +1,6 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.*;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
 import lombok.RequiredArgsConstructor;
@@ -52,10 +49,16 @@ public class ControllerUsuario {
 
     // "Authentication authentication" e resolvido automaticamente pelo Spring a partir
     // do token JWT validado no JwtAuthenticationFilter -- nao precisa de anotacao extra.
-    @PutMapping("/editarUsuario/{nomeUsuario}")
-    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioRequisicaoDTO dto,
+    @PutMapping("/editarUsuario/credenciais/{nomeUsuario}")
+    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioCredenciaisRequisicaoDTO dto,
                                  Authentication authentication){
         String resultado = usuarioService.editarUsuario(nomeUsuario, dto, authentication.getName());
+        return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
+    }
+
+    @PutMapping("/editarUsuario/perfil/{nomeUsuario}")
+    public String editarPerfil(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioPerfilRequisicaoDTO dto, Authentication authentication){
+        String resultado =  usuarioService.editarPerfil(nomeUsuario, dto, authentication.getName());
         return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
     }
 

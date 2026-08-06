@@ -1,10 +1,7 @@
 package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUsuarioDTO;
-import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.*;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
@@ -166,7 +163,7 @@ public class UsuarioService {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
     })
-    public String editarUsuario(String nomeUsuario, EditarUsuarioRequisicaoDTO dto, String nomeUsuarioAutenticado){
+    public String editarUsuario(String nomeUsuario, EditarUsuarioCredenciaisRequisicaoDTO dto, String nomeUsuarioAutenticado){
         String resultado = "";
 
         if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
@@ -201,12 +198,6 @@ public class UsuarioService {
             resultado += "| Nome de Usuario |";
         }
 
-        // Validação do Nome
-        if (dto.getNome() != null && !dto.getNome().isBlank() && !usuario.getNome().equals(dto.getNome())) {
-            usuario.setNome(dto.getNome());
-            resultado += "| Nome |";
-        }
-
         // Validação do Email
         if (dto.getEmail() != null && !dto.getEmail().isBlank() && !usuario.getEmail().equals(dto.getEmail())) {
             if(usuarioRepo.existsByEmail(dto.getEmail())){
@@ -222,34 +213,36 @@ public class UsuarioService {
             resultado += "| Senha |";
         }
 
-        // Validação do Time
-        if (dto.getNomeTime() != null && !dto.getNomeTime().isBlank()) {
+        usuarioRepo.save(usuario);
 
-            if(!timeRepo.existsByNome(dto.getNomeTime())){
-                throw new EntidadeNaoEcontrada("Time: " + dto.getNomeTime() + ", inexistente");
-            }
-
-            Time novoTime = timeRepo.findByNome(dto.getNomeTime());
-
-            boolean jaEstaNoTime = (usuario.getTime() != null && usuario.getTime().getNome().equals(novoTime.getNome()));
-
-            if(!jaEstaNoTime){
-                if(novoTime.getUsuarios().size() >= 3){
-                    throw new RegraDeNegocio("Time: " + novoTime.getNome() + ", ja possui 3 integrantes");
-                }
-
-                if (usuario.getTime() != null) {
-                    usuario.getTime().getUsuarios().remove(usuario);
-                }
-
-                novoTime.getUsuarios().add(usuario);
-                usuario.setTime(novoTime);
-
-                timeRepo.save(novoTime);
-
-                resultado += "| Time |";
-            }
+        if (resultado.isEmpty()) {
+            return "Nenhuma alteração realizada";
         }
+
+        return resultado;
+    }
+
+    public String editarPerfil(String nomeUsuario, EditarUsuarioPerfilRequisicaoDTO dto, String nomeUsuarioAutenticado){
+        String resultado = "";
+
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
+            throw new EntidadeNaoEcontrada("Usuario: " + nomeUsuario + ", nao encontrado");
+        }
+
+        // O token JWT prova quem esta chamando; so deixa editar a propria conta.
+        if(!nomeUsuario.equals(nomeUsuarioAutenticado)){
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
+        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+
+        // Validação do Nome
+        if (dto.getNomeNovo() != null && !dto.getNomeNovo().isBlank() && !usuario.getNome().equals(dto.getNomeNovo())) {
+            usuario.setNome(dto.getNomeNovo());
+            resultado += "| Nome |";
+        }
+
+        // Validação do resto
 
         usuarioRepo.save(usuario);
 
