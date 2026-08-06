@@ -3,6 +3,7 @@ package com.APImaratona.Maratona.Controller;
 import com.APImaratona.Maratona.DTO.Usuario.*;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,21 +24,21 @@ public class ControllerUsuario {
     private final CodeforcesService codeforcesService;
 
     @PostMapping("/cadastro")
-    public String cadastroUsuario(@RequestBody UsuarioRequisicaoDTO cr){
-        usuarioService.cadastrarUsuario(cr);
-        codeforcesService.sincronizarPerfilCodeforces(cr.getNomeUsuario());
+    public String cadastroUsuario(@Valid @RequestBody UsuarioRequest.CadastrarUsuario dto){
+        usuarioService.cadastrarUsuario(dto);
+        codeforcesService.sincronizarPerfilCodeforces(dto.nomeUsuario());
         return "Usuario cadastrado com sucesso";
     }
 
     @GetMapping("/listaUsuarios")
-    public List<UsuarioResponseDTO> listaUsuarios(){
+    public List<UsuarioResponse> listaUsuarios(){
         return usuarioService.listarUsuarios();
     }
 
     // RequestParam signifca que pode ser fornecido ou nao no caso de nada dispara uma exception
     @GetMapping("/buscarUsuario")
-    public UsuarioResponseDTO mostraUsuario(@RequestParam(required = false) String nomeUsuario,
-                                            @RequestParam(required = false) String email){
+    public UsuarioResponse mostraUsuario(@RequestParam(required = false) String nomeUsuario,
+                                         @RequestParam(required = false) String email){
         if(nomeUsuario != null){
             return usuarioService.buscarUsuarioNome(nomeUsuario);
         }else if (email != null){
@@ -49,23 +50,43 @@ public class ControllerUsuario {
 
     // "Authentication authentication" e resolvido automaticamente pelo Spring a partir
     // do token JWT validado no JwtAuthenticationFilter -- nao precisa de anotacao extra.
-    @PutMapping("/editarUsuario/credenciais/{nomeUsuario}")
-    public String editarUsuario(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioCredenciaisRequisicaoDTO dto,
+    @PutMapping("/editarUsuario/credenciais/{nomeUsuario}/nomeUsuario")
+    public LoginResponse editarUsuarioNomeUsuario(@PathVariable String nomeUsuario,@Valid @RequestBody UsuarioRequest.AlterarNomeUsuario dto,
                                  Authentication authentication){
-        String resultado = usuarioService.editarUsuario(nomeUsuario, dto, authentication.getName());
-        return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
+        return usuarioService.editarNomeUsuario(nomeUsuario, dto, authentication.getName());
     }
 
-    @PutMapping("/editarUsuario/perfil/{nomeUsuario}")
-    public String editarPerfil(@PathVariable String nomeUsuario, @RequestBody EditarUsuarioPerfilRequisicaoDTO dto, Authentication authentication){
-        String resultado =  usuarioService.editarPerfil(nomeUsuario, dto, authentication.getName());
-        return "Usuario: " + nomeUsuario + ", Modificacoes (" + resultado + ")";
+    @PutMapping("/editarUsuario/credenciais/{nomeUsuario}/email")
+    public String editarUsuarioEmail(@PathVariable String nomeUsuario,@Valid @RequestBody UsuarioRequest.AlterarEmail dto,
+                                     Authentication authentication){
+        usuarioService.editarEmailUsuario(nomeUsuario, dto, authentication.getName());
+        return "Usuário: " + nomeUsuario + ", email alterado com sucesso";
     }
 
-    @DeleteMapping("/excluirUsuario")
-    public String excluirUsuario(@RequestBody ExcluirUsuarioRequisicaoDTO dto, Authentication authentication){
-        usuarioService.excluirUsuario(dto, authentication.getName());
-        return "Usuario excluido com sucesso";
+    @PutMapping("/editarUsuario/credenciais/{nomeUsuario}/senha")
+    public String editarUsuarioSenha(@PathVariable String nomeUsuario,@Valid @RequestBody UsuarioRequest.AlterarSenha dto,
+                                     Authentication authentication){
+        usuarioService.editarSenhaUsuario(nomeUsuario, dto, authentication.getName());
+        return "Usuário: " + nomeUsuario + ", senha alterada com sucesso";
     }
 
+    @PutMapping("/editarUsuario/perfil/{nomeUsuario}/nome")
+    public String editarPerfilNome(@PathVariable String nomeUsuario, @Valid @RequestBody UsuarioRequest.AlterarNome dto,
+                                   Authentication authentication){
+        usuarioService.editarPerfilNome(nomeUsuario, dto, authentication.getName());
+        return "Usuário: " + nomeUsuario + ", nome alterado com sucesso";
+    }
+
+    @DeleteMapping("/excluirUsuario/{nomeUsuario}/email")
+    public String excluirUsuarioEmail(@PathVariable String nomeUsuario, @Valid @RequestBody UsuarioRequest.ExcluirUsuarioEmail dto,
+                                 Authentication authentication){
+        usuarioService.excluirUsuarioEmail(nomeUsuario, dto, authentication.getName());
+        return "Usuário: " + nomeUsuario + ", deletado com sucesso";
+    }
+
+    @DeleteMapping("/excluirUsuario/{nomeUsuario}/nomeUsuario")
+    public String excluirUsuarioNomeUsuario(@PathVariable String nomeUsuario, @Valid @RequestBody UsuarioRequest.ExcluirUsuarioNomeUsuario dto, Authentication authentication){
+        usuarioService.excluirUsuarioNomeUsuario(nomeUsuario, dto, authentication.getName());
+        return "Usuário: " + nomeUsuario + ", deletado com sucesso";
+    }
 }

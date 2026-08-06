@@ -1,6 +1,6 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUsuarioDTO;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUserInfoResponse;
 import com.APImaratona.Maratona.DTO.Usuario.*;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
@@ -10,11 +10,11 @@ import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
+import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,37 +29,37 @@ public class UsuarioService {
     private final UsuarioNodeRepository usuarioNodeRepository;
     private final CodeforcesService codeforcesService;
     private final SegHelperService segHelperService;
+    private final JwtService jwtService;
 
     @Caching(evict = {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", key = "#dto.nomeUsuario")
     })
-    public void cadastrarUsuario(UsuarioRequisicaoDTO dto){
+    public void cadastrarUsuario(UsuarioRequest.CadastrarUsuario dto){
         // validacao e cadastros do usuario
 
         Usuario usuario = new Usuario();
 
         // Fazer verificacao e tratamento
-        usuario.setNome(dto.getNome());
-        usuario.setNomeUsuario(dto.getNomeUsuario());
-        usuario.setSenha(segHelperService.encodarSenha(dto.getSenha()));; // nunca grava senha em texto puro
-        usuario.setEmail(dto.getEmail());
+        usuario.setNome(dto.nome());
+        usuario.setNomeUsuario(dto.nomeUsuario());
+        usuario.setSenha(segHelperService.encodarSenha(dto.senha()));; // nunca grava senha em texto puro
+        usuario.setEmail(dto.email());
 
-        if(usuarioRepo.existsByEmail(dto.getEmail())){
+        if(usuarioRepo.existsByEmail(dto.email())){
             throw new RegraDeNegocio("Usuário já cadastrado");
         }
 
-        if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
+        if(usuarioRepo.existsByNomeUsuario(dto.nomeUsuario())){
             throw new RegraDeNegocio("Nome de Usuário já cadastrado");
         }
 
         // validadcao do time
 
         Time time = new Time();
-
-        if(dto.getNomeTime()!=null){
-            if(timeRepo.existsByNome(dto.getNomeTime())){
-                time =  timeRepo.findByNome(dto.getNomeTime());
+        if (dto.nomeTime() != null && !dto.nomeTime().isBlank()) {
+            if(timeRepo.existsByNome(dto.nomeTime())){
+                time =  timeRepo.findByNome(dto.nomeTime());
 
                 if(time.getUsuarios().size()==3){
                     throw new RegraDeNegocio("O time " + time.getNome() + ", já possui 3 integrantes");
@@ -72,7 +72,7 @@ public class UsuarioService {
             }
         }
 
-        CodeforcesUsuarioDTO cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
+        CodeforcesUserInfoResponse cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
 
         usuario.setRating(cfUsuario.getRating());
         usuario.setRank(cfUsuario.getRank());
@@ -80,36 +80,36 @@ public class UsuarioService {
         usuarioRepo.save(usuario);
     }
 
-    public List<UsuarioResponseDTO> listarUsuarios(){
-        List<UsuarioResponseDTO> listaUsuarios = new ArrayList<>();
+    public List<UsuarioResponse> listarUsuarios(){
+        List<UsuarioResponse> listaUsuarios = new ArrayList<>();
 
         List<Usuario> usuarios = usuarioRepo.findAll();
 
         for(Usuario u : usuarios){
-            listaUsuarios.add(UsuarioResponseDTO.fromEntity(u));
+            listaUsuarios.add(UsuarioResponse.fromEntity(u));
         }
 
         return listaUsuarios;
     }
 
-    public UsuarioResponseDTO buscarUsuarioNome(String nome){
+    public UsuarioResponse buscarUsuarioNome(String nome){
         if(!usuarioRepo.existsByNomeUsuario(nome)){
             throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
-        return UsuarioResponseDTO.fromEntity(usuario);
+        return UsuarioResponse.fromEntity(usuario);
     }
 
-    public UsuarioResponseDTO buscarUsuarioEmail(String email){
+    public UsuarioResponse buscarUsuarioEmail(String email){
         if(!usuarioRepo.existsByEmail(email)){
             throw new EntidadeNaoEcontrada("Usuario nao encontrado");
         }
 
         Usuario usuario = usuarioRepo.findByEmail(email);
 
-        return UsuarioResponseDTO.fromEntity(usuario);
+        return UsuarioResponse.fromEntity(usuario);
     }
 
     // Para atualizar o cache caso tenha excluido um usuario
@@ -117,29 +117,14 @@ public class UsuarioService {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
     })
-    public void excluirUsuario(ExcluirUsuarioRequisicaoDTO dto, String nomeUsuarioAutenticado){
-        if(dto.getSenha() == null){
-            throw new RegraDeNegocio("Senha = NULL");
-        }
-
+    public void excluirUsuarioEmail(String nomeUsuario, UsuarioRequest.ExcluirUsuarioEmail dto, String nomeUsuarioAutenticado){
         Usuario u;
 
-        //verifica se é por nome
-        if(dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank()){
-            if(!usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
-                throw new EntidadeNaoEcontrada("Nome de usuario nao encontrado");
-            }
-
-            u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
-        }else if(dto.getEmail() != null && !dto.getEmail().isBlank()){ // verifica email
-            if(!usuarioRepo.existsByEmail(dto.getEmail())){
-                throw new RegraDeNegocio("Email de usuario nao encontrado");
-            }
-
-            u = usuarioRepo.findByEmail(dto.getEmail());
-        }else{
-            throw new RegraDeNegocio("Nenhum identificador de usuario (nomeUsuario ou email) fornecido");
+        if(!usuarioRepo.existsByEmail(dto.email())){
+            throw new RegraDeNegocio("Email de usuario nao encontrado");
         }
+
+        u = usuarioRepo.findByEmail(dto.email());
 
         // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
         // mesmo que a senha informada por algum motivo bata com a de outra conta.
@@ -147,14 +132,49 @@ public class UsuarioService {
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
-        if(segHelperService.verificaSenha(u.getSenha(), dto.getSenha())){
+        if(segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
             if(u.getTime() != null) {
+                if(u.getTime().getCapitao() == u){
+                    throw new RegraDeNegocio("O usuário é capitão de um time, Time= " + u.getTime().getNome());
+                }
                 u.getTime().getUsuarios().remove(u);
             }
 
             usuarioNodeRepository.deleteById(u.getNomeUsuario());
             usuarioRepo.delete(u);
-            return;
+        }else{
+            throw new RegraDeNegocio("Senha incorreta");
+        }
+    }
+
+    // Para atualizar o cache caso tenha excluido um usuario
+    @Caching(evict = {
+            @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
+            @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
+    })
+    public void excluirUsuarioNomeUsuario(String nomeUsuario, UsuarioRequest.ExcluirUsuarioNomeUsuario dto, String nomeUsuarioAutenticado){
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
+            throw new EntidadeNaoEcontrada("Nome de usuario nao encontrado");
+        }
+
+        Usuario u = usuarioRepo.findByNomeUsuario(nomeUsuario);
+
+        // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
+        // mesmo que a senha informada por algum motivo bata com a de outra conta.
+        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuarioAutenticado)){
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
+        if(!segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
+            if(u.getTime() != null) {
+                if(u.getTime().getCapitao() == u){
+                    throw new RegraDeNegocio("O usuário é capitão de um time, Time= " + u.getTime().getNome());
+                }
+                u.getTime().getUsuarios().remove(u);
+            }
+
+            usuarioNodeRepository.deleteById(u.getNomeUsuario());
+            usuarioRepo.delete(u);
         }else{
             throw new RegraDeNegocio("Senha incorreta");
         }
@@ -164,93 +184,112 @@ public class UsuarioService {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
             @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
     })
-    public String editarUsuario(String nomeUsuario, EditarUsuarioCredenciaisRequisicaoDTO dto, String nomeUsuarioAutenticado){
-        String resultado = "";
-
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
-            throw new EntidadeNaoEcontrada("Usuario: " + nomeUsuario + ", nao encontrado");
+    public LoginResponse editarNomeUsuario(String nomeUsuario, UsuarioRequest.AlterarNomeUsuario dto, String nomeUsuarioAutenticado) {
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
+            throw new EntidadeNaoEcontrada("Usuário não encontrado");
         }
 
-        // O token JWT prova quem esta chamando; so deixa editar a propria conta.
-        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)){
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
 
-        if(!segHelperService.verificaSenha(usuario.getSenha(), dto.getSenhaAntiga())){
+        if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
             throw new RegraDeNegocio("Senha incorreta");
         }
 
-        // Validação do Nome de Usuário
-        if (dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank() && !usuario.getNomeUsuario().equals(dto.getNomeUsuario())) {
-            if(usuarioRepo.existsByNomeUsuario(dto.getNomeUsuario())){
-                throw new RegraDeNegocio("Nome de usuário ja em uso");
-            }
-            String nomeUsuarioAntigo = usuario.getNomeUsuario();
-            usuario.setNomeUsuario(dto.getNomeUsuario());
-            usuarioNodeRepository.deleteById(nomeUsuarioAntigo);
-            codeforcesService.sincronizarPerfilCodeforces(usuario.getNomeUsuario());
-
-            CodeforcesUsuarioDTO cfUsuario = codeforcesService.infoPerfilUsuario(usuario.getNomeUsuario());
-            usuario.setRank(cfUsuario.getRank());
-            usuario.setRating(cfUsuario.getRating());
-
-            resultado += "| Nome de Usuario |";
+        String nomeNovo = dto.nomeUsuarioNovo();
+        if(nomeUsuario.equals(nomeNovo)) {
+            throw new RegraDeNegocio("O novo nome de usuário deve ser diferente do antigo");
         }
 
-        // Validação do Email
-        if (dto.getEmail() != null && !dto.getEmail().isBlank() && !usuario.getEmail().equals(dto.getEmail())) {
-            if(usuarioRepo.existsByEmail(dto.getEmail())){
-                throw new RegraDeNegocio("Email ja em uso");
-            }
-            usuario.setEmail(dto.getEmail());
-            resultado += "| email |";
+        if(usuarioRepo.existsByNomeUsuario(nomeNovo)) {
+            throw new RegraDeNegocio("Nome de usuário já em uso por outra pessoa");
         }
 
-        // Validação da Senha Nova
-        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !segHelperService.verificaSenha(dto.getSenhaNova(), usuario.getSenha())) {
-            usuario.setSenha(segHelperService.encodarSenha(dto.getSenhaNova()));
-            resultado += "| Senha |";
-        }
-
+        usuario.setNomeUsuario(nomeNovo);
         usuarioRepo.save(usuario);
 
-        if (resultado.isEmpty()) {
-            return "Nenhuma alteração realizada";
-        }
+        usuarioNodeRepository.atualizarNomeUsuarioNode(nomeUsuario, nomeNovo);
 
-        return resultado;
+        CodeforcesUserInfoResponse cfUsuario = codeforcesService.infoPerfilUsuario(nomeNovo);
+        usuario.setRank(cfUsuario.getRank());
+        usuario.setRating(cfUsuario.getRating());
+        usuarioRepo.save(usuario);
+
+        String tokenNovo = jwtService.gerarToken(nomeNovo);
+        return new LoginResponse(tokenNovo, "Bearer");
     }
 
-    public String editarPerfil(String nomeUsuario, EditarUsuarioPerfilRequisicaoDTO dto, String nomeUsuarioAutenticado){
-        String resultado = "";
-
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
-            throw new EntidadeNaoEcontrada("Usuario: " + nomeUsuario + ", nao encontrado");
+    public void editarEmailUsuario(String nomeUsuario, UsuarioRequest.AlterarEmail dto, String nomeUsuarioAutenticado) {
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
+            throw new EntidadeNaoEcontrada("Usuário não encontrado");
         }
 
-        // O token JWT prova quem esta chamando; so deixa editar a propria conta.
-        if(!nomeUsuario.equals(nomeUsuarioAutenticado)){
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
+        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
+            throw new RegraDeNegocio("Senha incorreta");
+        }
+
+        String novoEmail = dto.emailNovo();
+        if(usuarioRepo.existsByEmail(novoEmail)) {
+            throw new RegraDeNegocio("Nome de usuário já em uso por outra pessoa");
+        }
+
+        if(usuario.getEmail().equals(novoEmail)) {
+            throw new RegraDeNegocio("O novo email deve ser diferente do antigo");
+        }
+
+        usuario.setEmail(novoEmail);
+        usuarioRepo.save(usuario);
+    }
+
+    public void editarSenhaUsuario(String nomeUsuario, UsuarioRequest.AlterarSenha dto, String nomeUsuarioAutenticado) {
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
+            throw new EntidadeNaoEcontrada("Usuário não encontrado");
+        }
+
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
+        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
+            throw new RegraDeNegocio("Senha incorreta");
+        }
+
+        String novoSenha = dto.senhaNova();
+        if(usuario.getSenha().equals(novoSenha)) {
+            throw new RegraDeNegocio("A nova senha deve ser diferente do antigo");
+        }
+
+        usuario.setSenha(segHelperService.encodarSenha(novoSenha));
+        usuarioRepo.save(usuario);
+    }
+
+
+    public void editarPerfilNome(String nomeUsuario, UsuarioRequest.AlterarNome dto, String nomeUsuarioAutenticado){
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
+            throw new EntidadeNaoEcontrada("Usuário não encontrado");
+        }
+
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
 
-        // Validação do Nome
-        if (dto.getNomeNovo() != null && !dto.getNomeNovo().isBlank() && !usuario.getNome().equals(dto.getNomeNovo())) {
-            usuario.setNome(dto.getNomeNovo());
-            resultado += "| Nome |";
+        String novoNome = dto.nomeNovo();
+        if(usuario.getNome().equals(novoNome)) {
+            throw new RegraDeNegocio("O novo nome deve ser diferente do antigo");
         }
 
-        // Validação do resto
-
+        usuario.setNome(novoNome);
         usuarioRepo.save(usuario);
-
-        if (resultado.isEmpty()) {
-            return "Nenhuma alteração realizada";
-        }
-
-        return resultado;
     }
 }

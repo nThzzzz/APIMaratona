@@ -1,7 +1,7 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionResponse;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Model.Problema;
 import com.APImaratona.Maratona.Model.ProblemaNode;
@@ -33,7 +33,7 @@ public class ProblemasService {
     private final UsuarioRepository usuarioRepository;
 
     @CacheEvict(value = "cacheTodosProblemas", allEntries = true)
-    public void cadastrarProblema(CodeforcesSubmissionDTO submissao, String nomeUsuario) {
+    public void cadastrarProblema(CodeforcesSubmissionResponse submissao, String nomeUsuario) {
         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();
         List<String> tags = submissao.getProblem().getTags();
 
@@ -61,8 +61,8 @@ public class ProblemasService {
 
     @Cacheable(value = "cacheUsuariosProblema", key = "#idProblema")
     @Transactional(value = "neo4jTransactionManager", readOnly = true)
-    public List<UsuarioResponseDTO> usuariosFizeramProblema(String idProblema) {
-        List<UsuarioResponseDTO> usuariosDTO = new ArrayList<>();
+    public List<UsuarioResponse> usuariosFizeramProblema(String idProblema) {
+        List<UsuarioResponse> usuariosDTO = new ArrayList<>();
 
         if(!problemaRepository.existsByIdProblema(idProblema)){
             throw new EntidadeNaoEcontrada("Problema: "+ idProblema +", não cadastrado");
@@ -80,7 +80,7 @@ public class ProblemasService {
             Usuario usuario = usuarioRepository.findByNomeUsuario(uNode.getNomeUsuario());
 
             if (usuario != null) {
-                usuariosDTO.add(UsuarioResponseDTO.fromEntity(usuario));
+                usuariosDTO.add(UsuarioResponse.fromEntity(usuario));
             }
         }
 
@@ -117,7 +117,7 @@ public class ProblemasService {
         return problemaRepository.findAll();
     }
 
-    private Problema extrairTexto(CodeforcesSubmissionDTO submissao){
+    private Problema extrairTexto(CodeforcesSubmissionResponse submissao){
         Problema problema = new Problema();
 
         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();

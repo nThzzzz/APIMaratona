@@ -1,9 +1,6 @@
 package com.APImaratona.Maratona.Controller;
 
 import com.APImaratona.Maratona.Configuracao.SecurityConfig;
-import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioCredenciaisRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.EditarUsuarioPerfilRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.ExcluirUsuarioRequisicaoDTO;
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationEntryPoint;
 import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Services.CodeforcesService;
@@ -63,7 +60,7 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /editarUsuario/{nomeUsuario} sem header Authorization retorna 401")
     void editarUsuarioSemToken() throws Exception {
-        EditarUsuarioCredenciaisRequisicaoDTO dto = new EditarUsuarioCredenciaisRequisicaoDTO();
+        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
         dto.setSenhaAntiga("senha123");
 
         MvcResult resultado = chamar("Sem header Authorization", put("/editarUsuario/fulano")
@@ -77,7 +74,7 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /editarUsuario/{nomeUsuario} com token malformado retorna 401")
     void editarUsuarioTokenInvalido() throws Exception {
-        EditarUsuarioCredenciaisRequisicaoDTO dto = new EditarUsuarioCredenciaisRequisicaoDTO();
+        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
         dto.setSenhaAntiga("senha123");
 
         MvcResult resultado = chamar("Token malformado", put("/editarUsuario/fulano")
@@ -91,7 +88,7 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("DELETE /excluirUsuario sem header Authorization retorna 401")
     void excluirUsuarioSemToken() throws Exception {
-        ExcluirUsuarioRequisicaoDTO dto = new ExcluirUsuarioRequisicaoDTO();
+        ExcluirContaRequest dto = new ExcluirContaRequest();
         dto.setNomeUsuario("fulano");
         dto.setSenha("senha123");
 
@@ -107,7 +104,7 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     void editarUsuarioComTokenValido() throws Exception {
         String token = jwtService.gerarToken("fulano");
 
-        EditarUsuarioPerfilRequisicaoDTO dto = new EditarUsuarioPerfilRequisicaoDTO();
+        EditarPerfilRequest dto = new EditarPerfilRequest();
         dto.setNomeNovo("Fulano Editado");
 
         when(usuarioService.editarPerfil(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");

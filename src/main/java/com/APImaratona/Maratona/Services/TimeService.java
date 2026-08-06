@@ -1,9 +1,9 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
-import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
+import com.APImaratona.Maratona.DTO.Time.EditarTimeRequest;
+import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
+import com.APImaratona.Maratona.DTO.Time.TimeResponse;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
@@ -12,11 +12,11 @@ import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class TimeService {
     private final UsuarioRepository usuarioRepo;
     private final SegHelperService segHelperService;
 
-    public void cadastrarTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
+    public void cadastrarTime(CriarTimeRequest dto, String nomeUsuarioCapitao){
         // Fazer verificacao e tratamento
 
         Time time = new Time();
@@ -73,19 +73,19 @@ public class TimeService {
         timeRepo.save(time);
     }
 
-    public List<TimeResponseDTO> listarTimes(){
+    public List<TimeResponse> listarTimes(){
         List<Time> times = new ArrayList<>();
-        List<TimeResponseDTO> timesDTO = new ArrayList<>();
+        List<TimeResponse> timesDTO = new ArrayList<>();
 
         times = timeRepo.findAll();
 
         for(Time t : times){
-            TimeResponseDTO timeDTO = new TimeResponseDTO();
+            TimeResponse timeDTO = new TimeResponse();
             timeDTO.setNomeTime(t.getNome());
             timeDTO.setUsuarios(new ArrayList<>());
 
             for(Usuario u : t.getUsuarios()){
-                timeDTO.getUsuarios().add(UsuarioResponseDTO.fromEntity(u));
+                timeDTO.getUsuarios().add(UsuarioResponse.fromEntity(u));
             }
             timesDTO.add(timeDTO);
         }
@@ -93,19 +93,19 @@ public class TimeService {
         return timesDTO;
     }
 
-    public TimeResponseDTO buscarTime(String nome){
+    public TimeResponse buscarTime(String nome){
         if(!timeRepo.existsByNome(nome)){
             throw new EntidadeNaoEcontrada("Time: "+ nome +", nao encontrado");
         }
 
         Time time = timeRepo.findByNome(nome);
 
-        TimeResponseDTO timeDTO = new TimeResponseDTO();
+        TimeResponse timeDTO = new TimeResponse();
         timeDTO.setNomeTime(time.getNome());
         timeDTO.setUsuarios(new ArrayList<>());
 
         for(Usuario u : time.getUsuarios()){
-            timeDTO.getUsuarios().add(UsuarioResponseDTO.fromEntity(u));
+            timeDTO.getUsuarios().add(UsuarioResponse.fromEntity(u));
         }
 
         return timeDTO;
@@ -131,7 +131,7 @@ public class TimeService {
         timeRepo.delete(time);
     }
 
-    public void adicionarUsuarioNoTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
+    public void adicionarUsuarioNoTime(CriarTimeRequest dto, String nomeUsuarioCapitao){
         if(dto.getNomeTime() == null){
             throw new RegraDeNegocio("Parametro nome do time NULL");
         }
@@ -175,7 +175,7 @@ public class TimeService {
         }
     }
 
-    public void removerUsuarioNoTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
+    public void removerUsuarioNoTime(CriarTimeRequest dto, String nomeUsuarioCapitao){
         if(dto.getNomeTime() == null){
             throw new RegraDeNegocio("Parametro nome do time NULL");
         }
@@ -214,4 +214,26 @@ public class TimeService {
         }
     }
 
+
+
+//    public String editarTime(EditarTimeRequest dto, String nomeCapitao){
+//        String resultado = "";
+//
+//        if(nomeCapitao == null){
+//            throw new RegraDeNegocio("Parametro nomeCapitao NULL");
+//        }
+//
+//        if(dto == null){
+//            throw  new RegraDeNegocio("Parametro dto nulo");
+//        }
+//
+//        if(Objects.equals(dto.getNomeTimeAtual(), dto.getNomeTimeNovo()) && Objects.equals(dto.getNomeCapitaoAtual(), dto.getNomeTimeNovo())){
+//            throw new RegraDeNegocio("Nenhuma alteração a ser feita");
+//        }
+//
+//        if(dto.ca)
+//
+//
+//        return resultado;
+//    }
 }

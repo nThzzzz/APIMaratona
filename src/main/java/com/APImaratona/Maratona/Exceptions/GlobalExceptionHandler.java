@@ -3,6 +3,7 @@ package com.APImaratona.Maratona.Exceptions;
 import com.APImaratona.Maratona.DTO.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -32,6 +33,23 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+    }
+
+    // Captura os erros das anotações @NotBlank, @Email, etc.
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDTO> handleValidacaoCampos(MethodArgumentNotValidException ex) {
+
+        // Pega a mensagem do primeiro campo que falhou (ex: "O nome é obrigatório")
+        String mensagemValidacao = ex.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
+
+        ErrorResponseDTO erro = new ErrorResponseDTO(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Erro de Validação de Campos",
+                mensagemValidacao
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 
     // Captura falha de login ou token usado contra a conta errada, retorna 401 (UNAUTHORIZED)

@@ -10,4 +10,7 @@ public interface UsuarioNodeRepository extends Neo4jRepository<UsuarioNode, Stri
             "MERGE (u)-[:RESOLVEU]->(p)" +
             "RETURN u")
     void registrarResolucao(String nomeUsuario, String idProblema, int rating);
+
+    @Query("MATCH (u:Usuario {nomeUsuario: $nomeAntigo}) SET u.nomeUsuario = $nomeNovo")
+    void atualizarNomeUsuarioNode(String nomeAntigo, String nomeNovo);
 }

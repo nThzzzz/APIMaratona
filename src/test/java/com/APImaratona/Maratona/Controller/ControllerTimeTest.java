@@ -1,7 +1,7 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
+import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
+import com.APImaratona.Maratona.DTO.Time.TimeResponse;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Seguranca.JwtService;
@@ -56,7 +56,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /cadastroTime com sucesso retorna 200")
     void cadastroTimeSucesso() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of("fulano"));
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of("fulano"));
         doNothing().when(timeService).cadastrarTime(any());
 
         MvcResult resultado = chamar("Cadastro com sucesso", post("/cadastroTime")
@@ -70,7 +70,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /cadastroTime com nome duplicado retorna 500 (TimeService ainda usa RuntimeException bruta)")
     void cadastroTimeNomeDuplicado() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of());
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of());
         doThrow(new RuntimeException("Nome de time ja utilizado")).when(timeService).cadastrarTime(any());
 
         MvcResult resultado = chamar("Nome de time duplicado", post("/cadastroTime")
@@ -83,7 +83,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /listarTimes retorna a lista de times")
     void listarTimes() throws Exception {
-        TimeResponseDTO time = new TimeResponseDTO("Timaco", List.of());
+        TimeResponse time = new TimeResponse("Timaco", List.of());
         when(timeService.listarTimes()).thenReturn(List.of(time));
 
         MvcResult resultado = chamar("Lista com um time", get("/listarTimes"));
@@ -95,7 +95,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /buscarTime retorna o time buscado")
     void buscarTimeSucesso() throws Exception {
-        TimeResponseDTO time = new TimeResponseDTO("Timaco", List.of());
+        TimeResponse time = new TimeResponse("Timaco", List.of());
         when(timeService.buscarTime("Timaco")).thenReturn(time);
 
         MvcResult resultado = chamar("Busca por nome existente", get("/buscarTime").param("nome", "Timaco"));
@@ -116,7 +116,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /adicionarUsuario com sucesso retorna 200")
     void adicionarUsuarioSucesso() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of("fulano"));
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of("fulano"));
         doNothing().when(timeService).adicionarUsuarioNoTime(any());
 
         MvcResult resultado = chamar("Adicionar usuario com sucesso", put("/adicionarUsuario")
@@ -129,7 +129,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /adicionarUsuario quando o time ja tem 3 integrantes retorna 400")
     void adicionarUsuarioTimeCheio() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of("fulano"));
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of("fulano"));
         doThrow(new RegraDeNegocio("Time: Timaco, tera mais de 3 integrantes")).when(timeService).adicionarUsuarioNoTime(any());
 
         MvcResult resultado = chamar("Time ja com 3 integrantes", put("/adicionarUsuario")
@@ -142,7 +142,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /removerUsuario com sucesso retorna 200")
     void removerUsuarioSucesso() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of("fulano"));
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of("fulano"));
         doNothing().when(timeService).removerUsuarioNoTime(any());
 
         MvcResult resultado = chamar("Remover usuario com sucesso", put("/removerUsuario")
@@ -155,7 +155,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("PUT /removerUsuario para usuario que nao esta no time retorna 400")
     void removerUsuarioNaoEstaNoTime() throws Exception {
-        TimeRequisicaoDTO dto = new TimeRequisicaoDTO("Timaco", List.of("fulano"));
+        CriarTimeRequest dto = new CriarTimeRequest("Timaco", List.of("fulano"));
         doThrow(new RegraDeNegocio("Usuario: Fulano, nao esta no Time: Timaco")).when(timeService).removerUsuarioNoTime(any());
 
         MvcResult resultado = chamar("Usuario fora do time", put("/removerUsuario")

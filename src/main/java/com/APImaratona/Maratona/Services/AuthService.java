@@ -1,7 +1,6 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Usuario.LoginRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.LoginResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.LoginResponse;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
@@ -18,7 +17,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public LoginResponseDTO login(LoginRequisicaoDTO dto) {
+    public LoginResponse login(LoginRequest dto) {
         Usuario u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
 
         boolean senhaCorreta;
@@ -36,6 +35,6 @@ public class AuthService {
         }
 
         String token = jwtService.gerarToken(u.getNomeUsuario());
-        return new LoginResponseDTO(token, "Bearer");
+        return new LoginResponse(token, "Bearer");
     }
 }

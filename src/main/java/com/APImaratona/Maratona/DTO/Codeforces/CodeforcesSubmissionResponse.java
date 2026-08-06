@@ -3,8 +3,8 @@ package com.APImaratona.Maratona.DTO.Codeforces;
 import lombok.Data;
 
 @Data
-public class CodeforcesSubmissionDTO {
+public class CodeforcesSubmissionResponse {
     private Long id;
     private String verdict;
-    private CodeforcesProblemDTO problem;
+    private CodeforcesProblemResponse problem;
 }

@@ -3,6 +3,7 @@ package com.APImaratona.Maratona.Repository.Jpa;
 
 import com.APImaratona.Maratona.Model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -15,4 +16,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Usuario findByEmail(String email);
     Usuario findByNomeUsuario(String nomeUsuario);
+
 }

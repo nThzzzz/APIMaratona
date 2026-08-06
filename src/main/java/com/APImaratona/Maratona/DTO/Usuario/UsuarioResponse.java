@@ -6,7 +6,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class UsuarioResponseDTO implements Serializable  {
+public class UsuarioResponse implements Serializable  {
     private String nome;
     private String nomeUsuario;
     private String email;
@@ -14,8 +14,8 @@ public class UsuarioResponseDTO implements Serializable  {
     private String rank;
     private int rating;
 
-    public static UsuarioResponseDTO fromEntity(Usuario usuario) {
-        UsuarioResponseDTO dto = new UsuarioResponseDTO();
+    public static UsuarioResponse fromEntity(Usuario usuario) {
+        UsuarioResponse dto = new UsuarioResponse();
 
         dto.setNome(usuario.getNome());
         dto.setEmail(usuario.getEmail());

@@ -58,6 +58,10 @@ public class SecurityConfig {
                     // por enquanto so essas duas rotas exigem token valido
                     .requestMatchers(HttpMethod.PUT, "/editarUsuario/**").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/excluirUsuario").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/cadastroTime").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/adicionarUsuario").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/removerUsuario").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/excluirTime").authenticated()
                     // tudo o mais (cadastro, listagens, times, problemas) continua aberto --
                     // proteger o resto fica para uma proxima etapa, fora do escopo atual
                     .anyRequest().permitAll()

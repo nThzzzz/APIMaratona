@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CodefrocesUsuarioResponseDTO {
+public class CodeforcesUserResponse {
     private String status;
-    private List<CodeforcesUsuarioDTO> result;
+    private List<CodeforcesUserInfoResponse> result;
 }

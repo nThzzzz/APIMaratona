@@ -4,7 +4,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CodeforcesResponseDTO {
+public class CodeforcesResponse {
     private String status;
-    private List<CodeforcesSubmissionDTO> result;
+    private List<CodeforcesSubmissionResponse> result;
 }

@@ -1,6 +1,6 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Model.Problema;
 import com.APImaratona.Maratona.Seguranca.JwtService;
@@ -81,7 +81,7 @@ class ControllerProblemasTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /usuariosFizeramProblema/{idProblema} retorna a lista de usuarios")
     void usuariosFizeramProblema() throws Exception {
-        UsuarioResponseDTO usuario = new UsuarioResponseDTO();
+        UsuarioResponse usuario = new UsuarioResponse();
         usuario.setNomeUsuario("fulano");
         when(problemasService.usuariosFizeramProblema("1500A")).thenReturn(List.of(usuario));
 

@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CodeforcesProblemDTO {
+public class CodeforcesProblemResponse {
     private Integer contestId;
     private String index;
     private String name;

@@ -1,12 +1,11 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
 import com.APImaratona.Maratona.Model.Problema;
 import com.APImaratona.Maratona.Services.ProblemasService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,7 +26,7 @@ public class ControllerProblemas {
     }
 
     @GetMapping("/usuariosFizeramProblema/{idProblema}")
-    public List<UsuarioResponseDTO> usuariosFizeramPrblema(@PathVariable String idProblema){
+    public List<UsuarioResponse> usuariosFizeramPrblema(@PathVariable String idProblema){
         return problemasService.usuariosFizeramProblema(idProblema);
     }
 

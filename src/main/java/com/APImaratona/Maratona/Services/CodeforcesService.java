@@ -1,9 +1,9 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesResponseDTO;
-import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionDTO;
-import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUsuarioDTO;
-import com.APImaratona.Maratona.DTO.Codeforces.CodefrocesUsuarioResponseDTO;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesResponse;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesSubmissionResponse;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUserInfoResponse;
+import com.APImaratona.Maratona.DTO.Codeforces.CodeforcesUserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -26,10 +26,10 @@ public class CodeforcesService {
         String url = "https://codeforces.com/api/user.status?handle=" + nomeUsuarioCodeforces;
 
         try {
-            CodeforcesResponseDTO resposta = restTemplate.getForObject(url, CodeforcesResponseDTO.class);
+            CodeforcesResponse resposta = restTemplate.getForObject(url, CodeforcesResponse.class);
 
             if (resposta != null && "OK".equals(resposta.getStatus())) {
-                for (CodeforcesSubmissionDTO submissao : resposta.getResult()) {
+                for (CodeforcesSubmissionResponse submissao : resposta.getResult()) {
                     if ("OK".equals(submissao.getVerdict())) {
                         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();
                         List<String> tags = submissao.getProblem().getTags();
@@ -48,14 +48,14 @@ public class CodeforcesService {
         }
     }
 
-    public CodeforcesUsuarioDTO infoPerfilUsuario(String nomeUsuarioCodeForces){
-        CodeforcesUsuarioDTO cfUsuario = new CodeforcesUsuarioDTO();
+    public CodeforcesUserInfoResponse infoPerfilUsuario(String nomeUsuarioCodeForces){
+        CodeforcesUserInfoResponse cfUsuario = new CodeforcesUserInfoResponse();
 
         String url = "https://codeforces.com/api/user.info?handles=" + nomeUsuarioCodeForces;
 
         try {
             log.info("Adquirindo informações do usuário {}", nomeUsuarioCodeForces);
-            CodefrocesUsuarioResponseDTO resposta = restTemplate.getForObject(url, CodefrocesUsuarioResponseDTO.class);
+            CodeforcesUserResponse resposta = restTemplate.getForObject(url, CodeforcesUserResponse.class);
 
             if(resposta != null && "OK".equals(resposta.getStatus())){
                 cfUsuario = resposta.getResult().get(0);

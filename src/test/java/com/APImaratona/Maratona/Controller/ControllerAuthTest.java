@@ -1,7 +1,6 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.LoginRequisicaoDTO;
-import com.APImaratona.Maratona.DTO.Usuario.LoginResponseDTO;
+import com.APImaratona.Maratona.DTO.Usuario.LoginResponse;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Seguranca.JwtService;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -47,8 +46,8 @@ class ControllerAuthTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /auth/login com credenciais validas retorna 200 com token")
     void loginSucesso() throws Exception {
-        LoginRequisicaoDTO dto = new LoginRequisicaoDTO("fulano", "senha123");
-        when(authService.login(any())).thenReturn(new LoginResponseDTO("token-fake-123", "Bearer"));
+        LoginRequest dto = new LoginRequest("fulano", "senha123");
+        when(authService.login(any())).thenReturn(new LoginResponse("token-fake-123", "Bearer"));
 
         MvcResult resultado = chamar("Login com sucesso", post("/auth/login")
                 .contentType(APPLICATION_JSON)
@@ -61,7 +60,7 @@ class ControllerAuthTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /auth/login com credenciais invalidas retorna 401")
     void loginCredenciaisInvalidas() throws Exception {
-        LoginRequisicaoDTO dto = new LoginRequisicaoDTO("fulano", "senhaErrada");
+        LoginRequest dto = new LoginRequest("fulano", "senhaErrada");
         doThrow(new AutenticacaoInvalidaException("Usuário ou senha inválidos")).when(authService).login(any());
 
         MvcResult resultado = chamar("Credenciais invalidas", post("/auth/login")
