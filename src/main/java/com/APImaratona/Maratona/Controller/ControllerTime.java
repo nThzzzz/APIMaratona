@@ -4,6 +4,7 @@ import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
 import com.APImaratona.Maratona.Services.TimeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,8 +16,8 @@ public class ControllerTime {
     private final TimeService timeService;
 
     @PostMapping("/cadastroTime")
-    public String cadastroTime(@RequestBody TimeRequisicaoDTO dto){
-        timeService.cadastrarTime(dto);
+    public String cadastroTime(@RequestBody TimeRequisicaoDTO dto, Authentication authentication){
+        timeService.cadastrarTime(dto, authentication.getName());
         return "Time: " + dto.getNomeTime() + ", cadastrado com sucesso";
     }
 
@@ -31,20 +32,20 @@ public class ControllerTime {
     }
 
     @PutMapping("/adicionarUsuario")
-    public String adicionarUsuarioAoTime(@RequestBody TimeRequisicaoDTO dto){
-        timeService.adicionarUsuarioNoTime(dto);
+    public String adicionarUsuarioAoTime(@RequestBody TimeRequisicaoDTO dto, Authentication authentication){
+        timeService.adicionarUsuarioNoTime(dto, authentication.getName());
         return "Usuario(s): " + dto.getNomesUsuarios() + " adicionado(s) com sucesso ao Time: " + dto.getNomeTime();
     }
 
     @PutMapping("/removerUsuario")
-    public String removerUsuario(@RequestBody TimeRequisicaoDTO dto){
-        timeService.removerUsuarioNoTime(dto);
+    public String removerUsuario(@RequestBody TimeRequisicaoDTO dto, Authentication authentication){
+        timeService.removerUsuarioNoTime(dto, authentication.getName());
         return "Usuario(s): " + dto.getNomesUsuarios() + " removido(s) com sucesso do Time: " + dto.getNomeTime();
     }
 
     @DeleteMapping("/excluirTime")
-    public String excluirTime(@RequestParam String nome){
-        timeService.excluirTime(nome);
+    public String excluirTime(@RequestParam String nome, Authentication authentication){
+        timeService.excluirTime(nome, authentication.getName());
         return "time excluido com sucesso";
     }
 

@@ -10,6 +10,7 @@ import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
+import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
@@ -27,7 +28,7 @@ public class UsuarioService {
     private final TimeRepository timeRepo;
     private final UsuarioNodeRepository usuarioNodeRepository;
     private final CodeforcesService codeforcesService;
-    private final PasswordEncoder passwordEncoder;
+    private final SegHelperService segHelperService;
 
     @Caching(evict = {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
@@ -41,7 +42,7 @@ public class UsuarioService {
         // Fazer verificacao e tratamento
         usuario.setNome(dto.getNome());
         usuario.setNomeUsuario(dto.getNomeUsuario());
-        usuario.setSenha(passwordEncoder.encode(dto.getSenha())); // nunca grava senha em texto puro
+        usuario.setSenha(segHelperService.encodarSenha(dto.getSenha()));; // nunca grava senha em texto puro
         usuario.setEmail(dto.getEmail());
 
         if(usuarioRepo.existsByEmail(dto.getEmail())){
@@ -142,11 +143,11 @@ public class UsuarioService {
 
         // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
         // mesmo que a senha informada por algum motivo bata com a de outra conta.
-        if(!u.getNomeUsuario().equals(nomeUsuarioAutenticado)){
+        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuarioAutenticado)){
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
-        if(verificaSenha(u.getSenha(), dto.getSenha())){
+        if(segHelperService.verificaSenha(u.getSenha(), dto.getSenha())){
             if(u.getTime() != null) {
                 u.getTime().getUsuarios().remove(u);
             }
@@ -171,13 +172,13 @@ public class UsuarioService {
         }
 
         // O token JWT prova quem esta chamando; so deixa editar a propria conta.
-        if(!nomeUsuario.equals(nomeUsuarioAutenticado)){
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)){
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
         Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
 
-        if(!verificaSenha(usuario.getSenha(), dto.getSenhaAntiga())){
+        if(!segHelperService.verificaSenha(usuario.getSenha(), dto.getSenhaAntiga())){
             throw new RegraDeNegocio("Senha incorreta");
         }
 
@@ -208,8 +209,8 @@ public class UsuarioService {
         }
 
         // Validação da Senha Nova
-        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !passwordEncoder.matches(dto.getSenhaNova(), usuario.getSenha())) {
-            usuario.setSenha(passwordEncoder.encode(dto.getSenhaNova()));
+        if (dto.getSenhaNova() != null && !dto.getSenhaNova().isBlank() && !segHelperService.verificaSenha(dto.getSenhaNova(), usuario.getSenha())) {
+            usuario.setSenha(segHelperService.encodarSenha(dto.getSenhaNova()));
             resultado += "| Senha |";
         }
 
@@ -251,13 +252,5 @@ public class UsuarioService {
         }
 
         return resultado;
-    }
-
-    private boolean verificaSenha(String senhaCerto, String senha){
-        try {
-            return passwordEncoder.matches(senha, senhaCerto);
-        } catch (IllegalArgumentException e) {
-            return false; // hash salvo nao e um BCrypt valido (conta antiga em texto puro)
-        }
     }
 }

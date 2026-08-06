@@ -3,13 +3,16 @@ package com.APImaratona.Maratona.Services;
 import com.APImaratona.Maratona.DTO.Time.TimeRequisicaoDTO;
 import com.APImaratona.Maratona.DTO.Time.TimeResponseDTO;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponseDTO;
+import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Time;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
+import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,39 +22,45 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TimeService {
     private final TimeRepository timeRepo;
+    private final UsuarioService usuarioService;
     private final UsuarioRepository usuarioRepo;
+    private final SegHelperService segHelperService;
 
-    public void cadastrarTime(TimeRequisicaoDTO dto){
+    public void cadastrarTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
         // Fazer verificacao e tratamento
 
         Time time = new Time();
 
         if(dto.getNomeTime()==null){
-            throw new RuntimeException("Nome do time NULL");
+            throw new RegraDeNegocio("Nome do time NULL");
         }
 
         time.setNome(dto.getNomeTime());
 
         if(timeRepo.existsByNome(time.getNome())){
-            throw new RuntimeException("Nome de time ja utilizado");
+            throw new RegraDeNegocio("Nome de time ja utilizado");
         }
 
         List<String> nomesUsuarios = dto.getNomesUsuarios() != null ? dto.getNomesUsuarios() : new ArrayList<>();
 
         if(nomesUsuarios.size()>3){
-            throw new RuntimeException("Lista de membros do time maior que o permitido, tamanho= " + nomesUsuarios.size());
+            throw new RegraDeNegocio("Lista de membros do time maior que o permitido, tamanho= " + nomesUsuarios.size());
+        }
+
+        if(!nomesUsuarios.contains(nomeUsuarioCapitao)){
+            throw new RegraDeNegocio("Lista de membros do time não contem o nome do capitão, usuario=" + nomeUsuarioCapitao);
         }
 
         if(!nomesUsuarios.isEmpty()) {
             for(String nome : nomesUsuarios){
                 if(!usuarioRepo.existsByNomeUsuario(nome)){
-                    throw new RuntimeException("Usuario: " + nome + ", nao econtrado");
+                    throw new RegraDeNegocio("Usuario: " + nome + ", nao econtrado");
                 }
 
                 Usuario usuario = usuarioRepo.findByNomeUsuario(nome);
 
                 if(usuario.getTime() != null){
-                    throw new RuntimeException("Usuario: " + nome + ", ja esta cadastrado em um time");
+                    throw new RegraDeNegocio("Usuario: " + nome + ", ja esta cadastrado em um time");
                 }
 
                 time.getUsuarios().add(usuario);
@@ -59,6 +68,8 @@ public class TimeService {
             }
         }
 
+        // A verificação se o usuario existe para ser capitão não é necessária pois é feita anteriormente
+        time.setCapitao(usuarioRepo.findByNomeUsuario(nomeUsuarioCapitao));
         timeRepo.save(time);
     }
 
@@ -100,12 +111,17 @@ public class TimeService {
         return timeDTO;
     }
 
-    public void excluirTime(String nome){
+    public void excluirTime(String nome, String nomeUsuarioCapitao){
         if(!timeRepo.existsByNome(nome)){
             throw new RuntimeException("Time nao econtrado");
         }
 
         Time time = timeRepo.findByNome(nome);
+
+        String nomeCapitao = time.getCapitao().getNome();
+        if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
+            throw new RegraDeNegocio("Usuario não é o capitão to time, não pode excluir o time");
+        }
 
         for(Usuario u : time.getUsuarios()){
             u.setTime(null);
@@ -115,7 +131,7 @@ public class TimeService {
         timeRepo.delete(time);
     }
 
-    public void adicionarUsuarioNoTime(TimeRequisicaoDTO dto){
+    public void adicionarUsuarioNoTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
         if(dto.getNomeTime() == null){
             throw new RegraDeNegocio("Parametro nome do time NULL");
         }
@@ -125,6 +141,11 @@ public class TimeService {
         }
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
+
+        String nomeCapitao = time.getCapitao().getNome();
+        if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
+            throw new RegraDeNegocio("Usuario não é o capitão to time, não pode adicionar integrante ao time");
+        }
 
         if(dto.getNomesUsuarios() == null || dto.getNomesUsuarios().isEmpty()){
             throw new RegraDeNegocio("Nenhum usuario para adicionar");
@@ -154,7 +175,7 @@ public class TimeService {
         }
     }
 
-    public void removerUsuarioNoTime(TimeRequisicaoDTO dto){
+    public void removerUsuarioNoTime(TimeRequisicaoDTO dto, String nomeUsuarioCapitao){
         if(dto.getNomeTime() == null){
             throw new RegraDeNegocio("Parametro nome do time NULL");
         }
@@ -164,6 +185,11 @@ public class TimeService {
         }
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
+
+        String nomeCapitao = time.getCapitao().getNome();
+        if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
+            throw new RegraDeNegocio("Usuario não é o capitão to time, não pode remover integrante do time");
+        }
 
         if(dto.getNomesUsuarios() == null || dto.getNomesUsuarios().isEmpty()){
             throw new RegraDeNegocio("Nenhum usuario para remover");

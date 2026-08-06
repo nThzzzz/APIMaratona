@@ -22,6 +22,10 @@ public class Time {
     @OneToMany(mappedBy = "time", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Usuario> usuarios;
 
+    @OneToOne
+    @JoinColumn(name = "capitao_id")
+    private Usuario capitao;
+
     @Column (unique = true)
     private String nome;
 
