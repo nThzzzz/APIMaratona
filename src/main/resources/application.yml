@@ -2,6 +2,10 @@ spring:
   application:
     name: Maratona
 
+  output:
+    ansi:
+      enabled: ALWAYS
+
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USUARIO}
@@ -29,3 +33,15 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   expiracao-ms: 3600000 # 1 hora
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mongo:
+      enabled: false
