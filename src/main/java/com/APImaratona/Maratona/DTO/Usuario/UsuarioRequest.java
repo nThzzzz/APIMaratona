@@ -42,6 +42,6 @@ public interface UsuarioRequest {
     // --------------------------- Login -----------------------------
 
     record Login(
-            @NotBlank(message = "Email nulo") String email,
+            @NotBlank(message = "nomeUsuario nulo") String nomeUsuario,
             @NotBlank(message = "Senha nulo")String senhaAtual) {}
 }

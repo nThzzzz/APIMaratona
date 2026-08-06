@@ -1,6 +1,7 @@
 package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Usuario.LoginResponse;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequest;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
@@ -17,13 +18,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public LoginResponse login(LoginRequest dto) {
-        Usuario u = usuarioRepo.findByNomeUsuario(dto.getNomeUsuario());
+    public LoginResponse login(UsuarioRequest.Login dto) {
+        Usuario u = usuarioRepo.findByNomeUsuario(dto.nomeUsuario());
 
         boolean senhaCorreta;
         try {
             // matches(senhaDigitada, hashSalvo) -> refaz o hash da senha digitada e compara
-            senhaCorreta = (u != null) && passwordEncoder.matches(dto.getSenha(), u.getSenha());
+            senhaCorreta = (u != null) && passwordEncoder.matches(dto.senhaAtual(), u.getSenha());
         } catch (IllegalArgumentException e) {
             // valor salvo nao e um hash BCrypt valido (ex: linha antiga em texto puro) -> login errado
             senhaCorreta = false;

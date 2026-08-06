@@ -44,11 +44,11 @@ public class ControllerTime {
         return "Usuario(s): " + dto.getNomesUsuarios() + " removido(s) com sucesso do Time: " + dto.getNomeTime();
     }
 
-    @PutMapping("editarTime")
-    public String editarTime(@RequestBody EditarTimeRequest dto, Authentication authentication){
-        String resultado = timeService.editarTime(dto, authentication.getName());
-        return "Usuario: " + dto.getNomeTimeAtual() + ", Modificacoes (" + resultado + ")";
-    }
+//    @PutMapping("editarTime")
+//    public String editarTime(@RequestBody EditarTimeRequest dto, Authentication authentication){
+//        String resultado = timeService.editarTime(dto, authentication.getName());
+//        return "Usuario: " + dto.getNomeTimeAtual() + ", Modificacoes (" + resultado + ")";
+//    }
 
     @DeleteMapping("/excluirTime")
     public String excluirTime(@RequestParam String nome, Authentication authentication){
