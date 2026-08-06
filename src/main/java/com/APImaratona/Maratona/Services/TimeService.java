@@ -118,7 +118,7 @@ public class TimeService {
 
         Time time = timeRepo.findByNome(nome);
 
-        String nomeCapitao = time.getCapitao().getNome();
+        String nomeCapitao = time.getCapitao().getNomeUsuario();
         if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
             throw new RegraDeNegocio("Usuario não é o capitão to time, não pode excluir o time");
         }
@@ -142,7 +142,7 @@ public class TimeService {
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
-        String nomeCapitao = time.getCapitao().getNome();
+        String nomeCapitao = time.getCapitao().getNomeUsuario();
         if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
             throw new RegraDeNegocio("Usuario não é o capitão to time, não pode adicionar integrante ao time");
         }
@@ -186,7 +186,7 @@ public class TimeService {
 
         Time time = timeRepo.findByNome(dto.getNomeTime());
 
-        String nomeCapitao = time.getCapitao().getNome();
+        String nomeCapitao = time.getCapitao().getNomeUsuario();
         if(!segHelperService.saoMesmoUsuario(nomeCapitao, nomeUsuarioCapitao)){
             throw new RegraDeNegocio("Usuario não é o capitão to time, não pode remover integrante do time");
         }
