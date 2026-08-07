@@ -114,4 +114,4 @@ A suíte é pensada para rodar **sem depender de infraestrutura real** (Postgres
 * **`MaratonaApplicationTests`** (`contextLoads`) sobe o contexto completo da aplicação e por isso exige Postgres/Mongo/Neo4j/Redis e um `JWT_SECRET` reais. É marcado com `@Tag("integration")` e fica de fora do `./mvnw test` padrão.
 
 > [!NOTE]
-> 🧪 **Documentação Completa de Testes:** Preparamos um guia detalhado de como executar a suíte automatizada no Postman/Newman. [Clique aqui para ler o arquivo TESTS.md](TESTS.md).
+> 🧪 **Documentação Completa de Testes:** [Clique aqui para ler o arquivo TESTS.md](TESTS.md).
