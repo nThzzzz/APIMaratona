@@ -1,5 +1,14 @@
 # 🏆 API Maratona (Codeforces Integration)
 
+![GitHub repo size](https://img.shields.io/github/repo-size/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub top language](https://img.shields.io/github/languages/top/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub license](https://img.shields.io/github/license/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub contributors](https://img.shields.io/github/contributors/nThzzzz/APImaratona?style=for-the-badge)
+
+![GitHub last commit](https://img.shields.io/github/last-commit/nThzzzz/APImaratona?style=for-the-badge)
+
+
 Um sistema backend robusto desenvolvido em **Java com Spring Boot** para gerenciar competidores e times de maratonas de programação. O projeto possui uma arquitetura escalável e segura, aplicando **Persistência Poliglota** real (PostgreSQL, MongoDB, Neo4j e Redis) e integração assíncrona com a API do Codeforces.
 
 ---
