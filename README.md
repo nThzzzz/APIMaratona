@@ -109,7 +109,5 @@ A suíte é pensada para rodar **sem depender de infraestrutura real** (Postgres
 * **`JwtServiceTest`** é um teste unitário puro (sem contexto Spring) da geração/validação do token: caminho feliz, token malformado, expirado e assinado com outro segredo.
 * **`MaratonaApplicationTests`** (`contextLoads`) sobe o contexto completo da aplicação e por isso exige Postgres/Mongo/Neo4j/Redis e um `JWT_SECRET` reais. É marcado com `@Tag("integration")` e fica de fora do `./mvnw test` padrão.
 
-### Rodando localmente
-
-```bash
-./mvnw test
+> [!NOTE]
+> 🧪 **Documentação Completa de Testes:** Preparamos um guia detalhado de como executar a suíte automatizada no Postman/Newman. [Clique aqui para ler o arquivo TESTS.md](TESTS.md).
