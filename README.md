@@ -37,9 +37,10 @@ O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padr
 * **Motor de Recomendação:** Consultas complexas em linguagem Cypher (Neo4j) para recomendar problemas baseados em similaridade de resolução (Filtro Colaborativo) e popularidade por faixa de rating.
 * **Gerenciamento de Cache Cirúrgico:** Uso avançado das anotações `@Cacheable` e `@Caching(evict = ...)` para entregar respostas em milissegundos via Redis, garantindo a invalidação inteligente apenas das chaves afetadas durante atualizações (evitando "cache stale").
 * **Transações Poliglotas:** Gerenciadores de transação isolados (`@Primary` para o Postgres e um específico para o Neo4j), prevenindo esgotamento de *Connection Pools* e garantindo a integridade entre os diferentes bancos de dados.
+* **DTOs Imutáveis (Java Records) e Validação:** Utilização de `records` nativos do Java para garantir um tráfego de dados limpo, imutável e livre de *Boilerplate*. Os payloads são validados automaticamente na entrada do Controller via `@Valid` (`jakarta.validation`).
 * **Autenticação Stateless (JWT):** `POST /auth/login` emite um token assinado (jjwt) validado a cada requisição por um filtro do Spring Security (`JwtAuthenticationFilter`), sem sessão ou cookie. Senhas são persistidas com hash **BCrypt**, nunca em texto puro.
-* **Tratamento de Exceções Global:** Um `@RestControllerAdvice` intercepta regras de negócio e erros de banco, padronizando as respostas HTTP (`400 Bad Request`, `404 Not Found`) através do padrão DTO.
-
+* **Tratamento de Exceções Global:** Um `@RestControllerAdvice` intercepta regras de negócio, falhas de validação de campos (`MethodArgumentNotValidException`) e erros de banco, padronizando as respostas HTTP (`400 Bad Request`, `401 Unauthorized`, `404 Not Found`) através de um DTO de erro padronizado.
+  
 ---
 
 ## 🔐 Autenticação e Segurança
@@ -66,14 +67,17 @@ Emite o token JWT usado nas rotas protegidas.
 ### 👤 Usuários (`/`)
 Gerencia o cadastro, edição de perfil/credenciais e exclusão de competidores.
 
-| Método | Endpoint                                   | Descrição |
-| :--- |:-------------------------------------------| :--- |
-| `POST` | `/cadastro`                                | Cadastra um usuário e dispara a sync do Codeforces. |
-| `GET` | `/listaUsuarios`                           | Retorna todos os usuários (sem expor senhas). |
-| `GET` | `/buscarUsuario`                           | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
-| `PUT` | `/editarUsuario/perfil/{nomeUsuario}`      | 🔒 Edita dados estéticos do perfil (ex: nome). Exige apenas o token JWT válido. |
-| `PUT` | `/editarUsuario/credenciais/{nomeUsuario}` | 🔒 Edita dados sensíveis (e-mail, nome de usuário, nova senha). Exige o token JWT **e** a `senhaAntiga`. |
-| `DELETE` | `/excluirUsuario`                          | 🔒 Exclui o usuário. Exige o token JWT **e** a confirmação da `senha`. |
+| Método | Endpoint                                             | Descrição |
+| :---   |:-----------------------------------------------------| :--- |
+| `POST` | `/cadastro`                                          | Cadastra um usuário e dispara a sync do Codeforces. |
+| `GET`  | `/listaUsuarios`                                     | Retorna todos os usuários (sem expor senhas). |
+| `GET`  | `/buscarUsuario`                                     | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
+| `PUT`  | `/editarUsuario/perfil/{nomeUsuario}/nome`           | 🔒 Altera apenas o nome de exibição. Exige token JWT válido. |
+| `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/email`     | 🔒 Altera o e-mail da conta. Exige token JWT e a `senhaAtual`. |
+| `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/senha`     | 🔒 Altera a senha da conta. Exige token JWT e a `senhaAtual`. |
+| `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/nomeUsuario`| 🔒 Altera o username (Reflete no JWT, Postgres e Neo4j). Exige token JWT e a `senhaAtual`. |
+| `DELETE`| `/excluirUsuario/{nomeUsuario}/email`               | 🔒 Exclui a conta validando pelo e-mail e `senhaAtual`. Exige token JWT. |
+| `DELETE`| `/excluirUsuario/{nomeUsuario}/nomeUsuario`         | 🔒 Exclui a conta validando pelo username e `senhaAtual`. Exige token JWT. |
 
 ### 🛡️ Times (`/`)
 Gerencia os times (limitados a 3 integrantes) e a entrada/saída de membros.
