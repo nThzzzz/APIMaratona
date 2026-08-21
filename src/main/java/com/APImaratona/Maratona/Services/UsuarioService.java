@@ -13,6 +13,8 @@ import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
@@ -75,16 +77,9 @@ public class UsuarioService {
         usuarioRepo.save(usuario);
     }
 
-    public List<UsuarioResponse> listarUsuarios(){
-        List<UsuarioResponse> listaUsuarios = new ArrayList<>();
-
-        List<Usuario> usuarios = usuarioRepo.findAll();
-
-        for(Usuario u : usuarios){
-            listaUsuarios.add(UsuarioResponse.fromEntity(u));
-        }
-
-        return listaUsuarios;
+    // Paginado: a listagem crescia sem limite junto com a base.
+    public Page<UsuarioResponse> listarUsuarios(Pageable paginacao){
+        return usuarioRepo.findAll(paginacao).map(UsuarioResponse::fromEntity);
     }
 
     public UsuarioResponse buscarUsuarioNome(String nome){

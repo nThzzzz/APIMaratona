@@ -17,9 +17,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.data.domain.Page;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -124,7 +127,7 @@ class ControllerTimeSecurityTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /listarTimes continua publico com a cadeia de seguranca real ativa")
     void listarTimesContinuaPublico() throws Exception {
-        when(timeService.listarTimes()).thenReturn(List.of());
+        when(timeService.listarTimes(any())).thenReturn(Page.empty());
 
         MvcResult resultado = chamar("Endpoint publico sem token", get("/listarTimes"));
 

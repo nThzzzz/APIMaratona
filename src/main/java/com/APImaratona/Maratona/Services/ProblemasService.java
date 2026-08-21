@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -124,9 +126,11 @@ public class ProblemasService {
         return problemaRepository.findAllById(idsProblemas);
     }
 
+    // Paginado: o catalogo vem do Codeforces e cresce sem teto. A chave do cache passa
+    // a incluir a paginacao, entao cada pagina e cacheada separadamente.
     @Cacheable(value = "cacheTodosProblemas")
-    public List<Problema> listarProblemas(){
-        return problemaRepository.findAll();
+    public Page<Problema> listarProblemas(Pageable paginacao){
+        return problemaRepository.findAll(paginacao);
     }
 
     private Problema extrairTexto(CodeforcesSubmissionResponse submissao){

@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @RestController
@@ -25,9 +28,10 @@ public class ControllerUsuario {
         return "Usuario cadastrado com sucesso";
     }
 
+    // O Pageable e resolvido pelo Spring a partir de ?page=&size=&sort= (padrao: 20 itens).
     @GetMapping("/listaUsuarios")
-    public List<UsuarioResponse> listaUsuarios(){
-        return usuarioService.listarUsuarios();
+    public Page<UsuarioResponse> listaUsuarios(Pageable paginacao){
+        return usuarioService.listarUsuarios(paginacao);
     }
 
     @GetMapping("/buscarUsuario/{nomeUsuario}")

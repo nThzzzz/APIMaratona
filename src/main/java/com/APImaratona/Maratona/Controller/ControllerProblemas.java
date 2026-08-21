@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @RestController
@@ -23,8 +26,8 @@ public class ControllerProblemas {
     }
 
     @GetMapping("/listarProblemas")
-    public List<Problema> listarProblemas(){
-        return problemasService.listarProblemas();
+    public Page<Problema> listarProblemas(Pageable paginacao){
+        return problemasService.listarProblemas(paginacao);
     }
 
     @GetMapping("/usuariosFizeramProblema/{idProblema}")

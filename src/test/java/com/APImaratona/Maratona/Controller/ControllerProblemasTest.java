@@ -16,9 +16,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -79,7 +83,7 @@ class ControllerProblemasTest extends ApiControllerTestSupport {
     @DisplayName("GET /listarProblemas retorna a lista de problemas cadastrados")
     void listarProblemas() throws Exception {
         Problema problema = new Problema("1500A", "Problema Exemplo", "<p>Desc</p>", List.of("math"), 1200);
-        when(problemasService.listarProblemas()).thenReturn(List.of(problema));
+        when(problemasService.listarProblemas(any())).thenReturn(new PageImpl<>(List.of(problema)));
 
         MvcResult resultado = chamar("Lista com um problema", get("/listarProblemas"));
 

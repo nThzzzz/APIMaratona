@@ -19,6 +19,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,7 +100,7 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @DisplayName("GET /listarTimes retorna a lista de times")
     void listarTimes() throws Exception {
         TimeResponse time = new TimeResponse("Timaco", List.of());
-        when(timeService.listarTimes()).thenReturn(List.of(time));
+        when(timeService.listarTimes(any())).thenReturn(new PageImpl<>(List.of(time)));
 
         MvcResult resultado = chamar("Lista com um time", get("/listarTimes"));
 

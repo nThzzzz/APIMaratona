@@ -80,6 +80,8 @@ Duas consequências práticas:
 A sincronização com o Codeforces é `@Async` e passa por *web scraping*, então **numa base nova o Mongo ainda está vazio quando a pasta de Pesquisas roda**. Isso é tratado, não é um problema:
 
 * `Listar problemas` captura o `idProblema` de um item que existe de fato, em vez de assumir um id fixo.
+  A rota é paginada, então o script lê os itens de `.content` (as três listagens devolvem um objeto `Page`,
+  não um array).
 * As duas requisições que dependem dele (`Buscar problema` e `Usuários que fizeram o problema`) **se pulam sozinhas** quando não há nenhum, em vez de gerar `404`.
 * A limpeza não apaga os problemas — eles são cache do Codeforces. Da segunda execução em diante já estão lá e essas duas requisições passam a rodar de verdade.
 

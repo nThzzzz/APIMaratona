@@ -21,6 +21,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -148,7 +151,7 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         usuario.setRank("newbie");
         usuario.setRating(0);
 
-        when(usuarioService.listarUsuarios()).thenReturn(List.of(usuario));
+        when(usuarioService.listarUsuarios(any())).thenReturn(new PageImpl<>(List.of(usuario)));
 
         MvcResult resultado = chamar("Lista com um usuario", get("/listaUsuarios"));
 

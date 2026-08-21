@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @RestController
@@ -24,8 +27,8 @@ public class ControllerTime {
     }
 
     @GetMapping("/listarTimes")
-    public List<TimeResponse> listarTimes(){
-        return timeService.listarTimes();
+    public Page<TimeResponse> listarTimes(Pageable paginacao){
+        return timeService.listarTimes(paginacao);
     }
 
     @GetMapping("/buscarTime")

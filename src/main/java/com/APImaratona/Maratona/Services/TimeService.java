@@ -11,6 +11,8 @@ import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
 import com.APImaratona.Maratona.Repository.Jpa.UsuarioRepository;
 import com.APImaratona.Maratona.Seguranca.SegHelperService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -70,33 +72,12 @@ public class TimeService {
         timeRepo.save(time);
     }
 
-    public List<TimeResponse> listarTimes(){
-        List<Time> times = new ArrayList<>();
-        List<TimeResponse> timesDTO = new ArrayList<>();
-
-        times = timeRepo.findAll();
-
-        for(Time t : times){
-            TimeResponse timeDTO = new TimeResponse();
-            timeDTO.setNomeTime(t.getNome());
-            timeDTO.setUsuarios(new ArrayList<>());
-
-            for(Usuario u : t.getUsuarios()){
-                timeDTO.getUsuarios().add(UsuarioResponse.fromEntity(u));
-            }
-            timesDTO.add(timeDTO);
-        }
-
-        return timesDTO;
+    // Paginado: a listagem crescia sem limite junto com a base.
+    public Page<TimeResponse> listarTimes(Pageable paginacao){
+        return timeRepo.findAll(paginacao).map(this::paraResponse);
     }
 
-    public TimeResponse buscarTime(String nome){
-        if(!timeRepo.existsByNome(nome)){
-            throw new EntidadeNaoEcontrada("Time: "+ nome +", nao encontrado");
-        }
-
-        Time time = timeRepo.findByNome(nome);
-
+    private TimeResponse paraResponse(Time time){
         TimeResponse timeDTO = new TimeResponse();
         timeDTO.setNomeTime(time.getNome());
         timeDTO.setUsuarios(new ArrayList<>());
@@ -106,6 +87,14 @@ public class TimeService {
         }
 
         return timeDTO;
+    }
+
+    public TimeResponse buscarTime(String nome){
+        if(!timeRepo.existsByNome(nome)){
+            throw new EntidadeNaoEcontrada("Time: "+ nome +", nao encontrado");
+        }
+
+        return paraResponse(timeRepo.findByNome(nome));
     }
 
     public void excluirTime(String nome, String nomeUsuarioCapitao){

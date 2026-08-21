@@ -435,10 +435,12 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "// Pega um idProblema que existe de fato, em vez de chutar um fixo:",
-                      "// o conteudo do Mongo depende de quais problemas os 4 handles resolveram.",
-                      "const problemas = pm.response.json();",
-                      "if (Array.isArray(problemas) && problemas.length > 0) {",
+                      "// A rota e paginada: a resposta e um objeto Page, e os itens vem em .content.",
+                      "// Pega um idProblema que existe de fato, em vez de chutar um fixo -- o conteudo",
+                      "// do Mongo depende de quais problemas os 4 handles resolveram.",
+                      "const pagina = pm.response.json();",
+                      "const problemas = Array.isArray(pagina) ? pagina : (pagina.content || []);",
+                      "if (problemas.length > 0) {",
                       "    pm.environment.set(\"idProblema\", problemas[0].idProblema);",
                       "    console.log(\"idProblema capturado: \" + problemas[0].idProblema);",
                       "} else {",

@@ -17,10 +17,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.data.domain.Page;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -144,7 +147,7 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /listaUsuarios continua publico mesmo com a cadeia de seguranca real ativa")
     void listaUsuariosContinuaPublico() throws Exception {
-        when(usuarioService.listarUsuarios()).thenReturn(List.of());
+        when(usuarioService.listarUsuarios(any())).thenReturn(Page.empty());
 
         MvcResult resultado = chamar("Endpoint publico sem token", get("/listaUsuarios"));
 

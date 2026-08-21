@@ -91,7 +91,7 @@ Gerencia o cadastro, edição de perfil/credenciais e exclusão de competidores.
 | Método | Endpoint                                             | Descrição |
 | :---   |:-----------------------------------------------------| :--- |
 | `POST` | `/cadastro`                                          | Cadastra um usuário e dispara a sync do Codeforces. |
-| `GET`  | `/listaUsuarios`                                     | Retorna todos os usuários (sem expor senhas). |
+| `GET`  | `/listaUsuarios`                                     | Lista usuários (sem expor senhas). Paginado: `?page=&size=&sort=`. |
 | `GET`  | `/buscarUsuario/{nomeUsuario}`                       | Busca um usuário pelo nome de usuário. |
 | `PUT`  | `/editarUsuario/perfil/{nomeUsuario}/nome`           | 🔒 Altera apenas o nome de exibição. Exige token JWT válido. |
 | `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/email`     | 🔒 Altera o e-mail da conta. Exige token JWT e a `senhaAtual`. |
@@ -106,7 +106,7 @@ Gerencia os times (limitados a 3 integrantes) e a entrada/saída de membros.
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
 | `POST` | `/cadastroTime` | 🔒 Cadastra um time e (opcionalmente) seus membros. Quem cria vira o capitão e precisa estar na lista de membros. |
-| `GET` | `/listarTimes` | Lista todos os times e seus membros. |
+| `GET` | `/listarTimes` | Lista os times e seus membros. Paginado: `?page=&size=&sort=`. |
 | `GET` | `/buscarTime` | Busca um time específico (Query: `?nome=`). |
 | `PUT` | `/adicionarUsuario` | 🔒 Adiciona usuários a um time existente. Só o capitão. |
 | `PUT` | `/removerUsuario` | 🔒 Remove usuários específicos de um time. Só o capitão. |
@@ -120,7 +120,7 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
 | `GET` | `/buscarProblema/{idProblema}` | Traz o HTML e os dados completos do problema (Mongo). |
-| `GET` | `/listarProblemas` | Lista todos os problemas cacheados (Redis). |
+| `GET` | `/listarProblemas` | Lista os problemas, com cache no Redis. Paginado: `?page=&size=&sort=`. |
 | `GET` | `/usuariosFizeramProblema/{idProblema}`| Lista quem resolveu uma questão específica (Neo4j). |
 | `GET` | `/problemasFeitorPor/{nomeUsuario}`| Lista as questões resolvidas por um usuário. |
 | `GET` | `/recomendarProblemaSimilaridade/{nome}`| Recomenda problemas via Filtro Colaborativo (Neo4j). |
