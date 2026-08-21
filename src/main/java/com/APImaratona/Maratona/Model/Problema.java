@@ -1,6 +1,8 @@
 package com.APImaratona.Maratona.Model;
 
-import jakarta.persistence.Id;
+// Tem que ser o @Id do Spring Data, nao o do JPA: o Mongo so reconhece este e, com o
+// jakarta.persistence.Id, o idProblema virava campo comum e o _id era um ObjectId aleatorio.
+import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
