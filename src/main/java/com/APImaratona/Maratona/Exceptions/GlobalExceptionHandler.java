@@ -2,7 +2,9 @@ package com.APImaratona.Maratona.Exceptions;
 
 import com.APImaratona.Maratona.DTO.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -64,16 +66,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
     }
 
-    // Opcional: Captura qualquer outro erro que não prevemos e retorna 500
+    // Captura qualquer outro erro que não prevemos.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleErroGenerico(Exception ex) {
+        // As exceções do próprio Spring MVC (rota inexistente, método não suportado, media
+        // type inválido...) implementam ErrorResponse e já carregam o status correto. Sem
+        // este desvio elas caíam neste catch-all: uma URL digitada errada respondia 500.
+        HttpStatusCode status = ex instanceof ErrorResponse erroSpring
+                ? erroSpring.getStatusCode()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+
         ErrorResponseDTO erro = new ErrorResponseDTO(
                 LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Erro Interno no Servidor",
+                status.value(),
+                status.is5xxServerError() ? "Erro Interno no Servidor" : "Requisição inválida",
                 ex.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        return ResponseEntity.status(status).body(erro);
     }
 
 }

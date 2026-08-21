@@ -179,6 +179,22 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
+    @DisplayName("GET /buscarUsuario/{nomeUsuario} nao trunca nome de usuario com ponto")
+    void buscarUsuarioComPontoNoNome() throws Exception {
+        // Handles do Codeforces costumam ter ponto (ex: arthurb.zanvetor). Com o
+        // PathPatternParser do Spring 6 nao ha mais suffix pattern matching, mas o teste
+        // fixa isso: o service tem que receber o nome inteiro, nao "arthurb".
+        UsuarioResponse usuario = new UsuarioResponse();
+        usuario.setNomeUsuario("arthurb.zanvetor");
+        when(usuarioService.buscarUsuarioNome("arthurb.zanvetor")).thenReturn(usuario);
+
+        MvcResult resultado = chamar("Nome de usuario com ponto", get("/buscarUsuario/arthurb.zanvetor"));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        verify(usuarioService).buscarUsuarioNome("arthurb.zanvetor");
+    }
+
+    @Test
     @DisplayName("GET /buscarUsuario/{nomeUsuario} para usuario inexistente retorna 404")
     void buscarUsuarioInexistente() throws Exception {
         when(usuarioService.buscarUsuarioNome("fantasma")).thenThrow(new EntidadeNaoEcontrada("Usuario nao encontrado"));

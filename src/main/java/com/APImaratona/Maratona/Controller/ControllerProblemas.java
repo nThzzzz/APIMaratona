@@ -15,7 +15,9 @@ import java.util.List;
 public class ControllerProblemas {
     private final ProblemasService problemasService;
 
-    @GetMapping("/{idProblema}")
+    // Prefixo explicito de proposito: como "/{idProblema}" na raiz, esta rota capturava
+    // qualquer GET de um segmento so e engolia caminhos digitados errado.
+    @GetMapping("/buscarProblema/{idProblema}")
     public Problema buscarProblema(@PathVariable String idProblema){
         return problemasService.buscarProblema(idProblema);
     }

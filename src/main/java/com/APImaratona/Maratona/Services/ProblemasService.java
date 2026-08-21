@@ -56,7 +56,14 @@ public class ProblemasService {
     }
 
     public Problema buscarProblema(String idProblema){
-        return problemaRepository.findByIdProblema(idProblema);
+        Problema problema = problemaRepository.findByIdProblema(idProblema);
+
+        // Sem isso o findBy devolve null e a rota responde 200 com corpo vazio.
+        if(problema == null){
+            throw new EntidadeNaoEcontrada("Problema: " + idProblema + ", não cadastrado");
+        }
+
+        return problema;
     }
 
     @Cacheable(value = "cacheUsuariosProblema", key = "#idProblema")
@@ -106,7 +113,12 @@ public class ProblemasService {
 
         for(ProblemaNode pb : problemasResolvidos){
             Problema problemaFull = problemaRepository.findByIdProblema(pb.getIdProblema());
-            listaProblemas.add(problemaFull);
+
+            // O grafo pode ter a relacao sem que o problema tenha sido salvo no Mongo
+            // (o cadastro no Neo4j vem antes e sobrevive a falha do scraping).
+            if(problemaFull != null){
+                listaProblemas.add(problemaFull);
+            }
         }
 
         return listaProblemas;
@@ -200,7 +212,13 @@ public class ProblemasService {
         List<Problema> problemas = new ArrayList<>();
 
         for(String id : idsProblemas){
-            problemas.add(problemaRepository.findByIdProblema(id));
+            Problema problema = problemaRepository.findByIdProblema(id);
+
+            // Mesma situacao de problemasFeitosPor: recomendacao vinda do grafo pode
+            // apontar para um problema ausente no Mongo -- fica de fora em vez de virar null.
+            if(problema != null){
+                problemas.add(problema);
+            }
         }
 
         return problemas;

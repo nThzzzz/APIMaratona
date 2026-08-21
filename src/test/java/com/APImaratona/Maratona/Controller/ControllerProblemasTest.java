@@ -44,26 +44,35 @@ class ControllerProblemasTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("GET /{idProblema} retorna o problema encontrado")
+    @DisplayName("GET /buscarProblema/{idProblema} retorna o problema encontrado")
     void buscarProblemaExistente() throws Exception {
         Problema problema = new Problema("1500A", "Problema Exemplo", "<p>Desc</p>", List.of("math"), 1200);
         when(problemasService.buscarProblema("1500A")).thenReturn(problema);
 
-        MvcResult resultado = chamar("Problema existente", get("/1500A"));
+        MvcResult resultado = chamar("Problema existente", get("/buscarProblema/1500A"));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
         assertThat(resultado.getResponse().getContentAsString()).contains("Problema Exemplo");
     }
 
     @Test
-    @DisplayName("GET /{idProblema} inexistente retorna 200 com corpo vazio (sem tratamento de nao encontrado)")
+    @DisplayName("GET /buscarProblema/{idProblema} inexistente retorna 404")
     void buscarProblemaInexistente() throws Exception {
-        when(problemasService.buscarProblema("9999Z")).thenReturn(null);
+        when(problemasService.buscarProblema("9999Z"))
+                .thenThrow(new EntidadeNaoEcontrada("Problema: 9999Z, não cadastrado"));
 
-        MvcResult resultado = chamar("Problema inexistente", get("/9999Z"));
+        MvcResult resultado = chamar("Problema inexistente", get("/buscarProblema/9999Z"));
 
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        assertThat(resultado.getResponse().getContentAsString()).isBlank();
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(404);
+        assertThat(resultado.getResponse().getContentAsString()).contains("não cadastrado");
+    }
+
+    @Test
+    @DisplayName("GET de um segmento so nao cai mais no buscarProblema (rota deixou de ser coringa)")
+    void rotaRaizNaoEhMaisCoringa() throws Exception {
+        MvcResult resultado = chamar("Caminho de um segmento sem rota", get("/qualquerCoisa"));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(404);
     }
 
     @Test

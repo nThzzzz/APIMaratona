@@ -113,7 +113,7 @@ public class TimeService {
 
     public void excluirTime(String nome, String nomeUsuarioCapitao){
         if(!timeRepo.existsByNome(nome)){
-            throw new RuntimeException("Time nao econtrado");
+            throw new EntidadeNaoEcontrada("Time: " + nome + ", nao encontrado");
         }
 
         Time time = timeRepo.findByNome(nome);

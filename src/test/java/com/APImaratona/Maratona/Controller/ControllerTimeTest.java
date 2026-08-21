@@ -212,14 +212,15 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("DELETE /excluirTime para time inexistente retorna 500 (TimeService ainda usa RuntimeException bruta)")
+    @DisplayName("DELETE /excluirTime para time inexistente retorna 404")
     void excluirTimeInexistente() throws Exception {
-        doThrow(new RuntimeException("Time nao econtrado")).when(timeService).excluirTime("Fantasma", "fulano");
+        doThrow(new EntidadeNaoEcontrada("Time: Fantasma, nao encontrado"))
+                .when(timeService).excluirTime("Fantasma", "fulano");
 
         MvcResult resultado = chamar("Time inexistente", delete("/excluirTime")
                 .principal(CAPITAO)
                 .param("nome", "Fantasma"));
 
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(500);
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(404);
     }
 }

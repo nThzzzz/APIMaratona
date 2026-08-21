@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "tb_usuarios")
@@ -19,6 +20,8 @@ public class Usuario {
 
     @Column (unique = true)
     private String email;
+
+    @ToString.Exclude // senha nunca deve aparecer em log
     private String senha;
 
     @Column (unique = true)

@@ -102,16 +102,6 @@ public class UsuarioService {
         return UsuarioResponse.fromEntity(usuario);
     }
 
-    public UsuarioResponse buscarUsuarioEmail(String email){
-        if(!usuarioRepo.existsByEmail(email)){
-            throw new EntidadeNaoEcontrada("Usuario nao encontrado");
-        }
-
-        Usuario usuario = usuarioRepo.findByEmail(email);
-
-        return UsuarioResponse.fromEntity(usuario);
-    }
-
     // Para atualizar o cache caso tenha excluido um usuario
     @Caching(evict = {
             @CacheEvict(value = "cacheUsuariosProblema", allEntries = true),
@@ -121,7 +111,7 @@ public class UsuarioService {
         Usuario u;
 
         if(!usuarioRepo.existsByEmail(dto.email())){
-            throw new RegraDeNegocio("Email de usuario nao encontrado");
+            throw new EntidadeNaoEcontrada("Email de usuario nao encontrado");
         }
 
         u = usuarioRepo.findByEmail(dto.email());

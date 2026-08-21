@@ -97,7 +97,7 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| `GET` | `/{idProblema}` | Traz o HTML e os dados completos do problema (Mongo). |
+| `GET` | `/buscarProblema/{idProblema}` | Traz o HTML e os dados completos do problema (Mongo). |
 | `GET` | `/listarProblemas` | Lista todos os problemas cacheados (Redis). |
 | `GET` | `/usuariosFizeramProblema/{idProblema}`| Lista quem resolveu uma questão específica (Neo4j). |
 | `GET` | `/problemasFeitorPor/{nomeUsuario}`| Lista as questões resolvidas por um usuário. |
