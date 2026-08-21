@@ -4,7 +4,7 @@ Esta coleção percorre o ciclo de vida completo da API Maratona contra um ambie
 
 **São 41 requisições e todas devem responder `200`.**
 
-> Não confunda com a suíte de testes automatizados em Java (`./mvnw test`, 83 testes), descrita no [README principal](../README.md#-testes). Aquela roda sem infraestrutura nenhuma e é o que o CI executa. Esta aqui exige o ambiente de pé e serve para demonstrar o sistema funcionando.
+> Não confunda com a suíte de testes automatizados em Java (`./mvnw test`, 86 testes), descrita no [README principal](../README.md#-testes). Aquela roda sem infraestrutura nenhuma e é o que o CI executa. Esta aqui exige o ambiente de pé e serve para demonstrar o sistema funcionando.
 
 ## 1. Suba o ambiente
 

@@ -130,7 +130,7 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 
 ## 🧪 Testes
 
-A suíte tem **59 testes** e é pensada para rodar **sem depender de infraestrutura real** (Postgres/Mongo/Neo4j/Redis) no dia a dia:
+A suíte tem **86 testes** e é pensada para rodar **sem depender de infraestrutura real** (Postgres/Mongo/Neo4j/Redis) no dia a dia:
 
 * **Testes de controller** (`@WebMvcTest`, services mockados com Mockito) cobrem o contrato HTTP de cada controller. Em especial, `ControllerUsuarioSecurityTest` sobe a cadeia **real** do Spring Security (`SecurityConfig` + `JwtAuthenticationFilter` + `JwtService`) para validar `401` sem token, `401` com token inválido e `200` com um token válido de verdade — usando um `jwt.secret` de teste via `@TestPropertySource`, sem tocar em nenhum banco.
 * **`UsuarioServiceSegurancaTest`** é um teste unitário puro das checagens de senha do `UsuarioService`, usando `SegHelperService`/**BCrypt reais** (mockar o encoder esconderia justamente o tipo de bug que ele trava: comparar hash com texto puro, ou inverter a condição de senha correta).
