@@ -1,0 +1,90 @@
+# Sobe a API com os quatro bancos que ela usa. Voltado para desenvolvimento e para
+# a demonstracao com o Newman (ver postman/README.md) -- nao para producao: as
+# credenciais abaixo sao fixas e publicas, e nenhum volume e persistido.
+#
+#   docker compose up --build     sobe tudo (a app so inicia com os bancos saudaveis)
+#   docker compose down -v        derruba e apaga os dados
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: maratona
+      POSTGRES_USER: maratona
+      POSTGRES_PASSWORD: maratona123
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maratona -d maratona"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/senhaTeste123
+    ports:
+      - "7474:7474"   # console web
+      - "7687:7687"   # bolt
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "senhaTeste123", "RETURN 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      # Dentro da rede do compose o host de cada banco e o nome do servico,
+      # nao localhost -- localhost aqui seria o proprio container da api.
+      DATABASE_URL: jdbc:postgresql://postgres:5432/maratona
+      DATABASE_USUARIO: maratona
+      DATABASE_SENHA: maratona123
+      MONGO_URI: mongodb://mongo:27017/maratona
+      REDIS_URL: redis://redis:6379
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USUARIO: neo4j
+      NEO4J_SENHA: senhaTeste123
+      # Chave HMAC em Base64. Valor de desenvolvimento: gere a sua para qualquer
+      # uso que nao seja local (`openssl rand -base64 32`).
+      JWT_SECRET: ${JWT_SECRET:-zWvbngQl1NZ/rCawtYmhf+a+toMdWLAGEOGrgZ9QWYE=}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    # A imagem de runtime nao tem curl nem wget, entao a checagem abre um socket
+    # direto pela /dev/tcp do bash. Permite usar `docker compose up --wait`.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s

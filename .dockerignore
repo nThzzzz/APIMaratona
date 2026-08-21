@@ -1,0 +1,14 @@
+# O contexto de build so precisa do necessario para compilar.
+target/
+.git/
+.github/
+.idea/
+newman/
+*.iml
+.DS_Store
+
+# Documentacao e artefatos de teste manual nao entram na imagem
+README.md
+TESTS.md
+LICENSE
+postman/

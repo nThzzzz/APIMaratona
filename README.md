@@ -28,6 +28,26 @@ Um sistema backend robusto desenvolvido em **Java com Spring Boot** para gerenci
 
 ---
 
+## 🐳 Como rodar
+
+A aplicação depende de quatro bancos e de nove variáveis de ambiente, então o caminho mais curto é o Docker:
+
+```bash
+docker compose up --build --wait
+```
+
+O comando levanta PostgreSQL, MongoDB, Neo4j, Redis e a própria API já configurada, e só devolve o terminal quando tudo estiver saudável. A API sobe em `http://localhost:8080` e o estado dos bancos aparece em `/actuator/health`.
+
+Para derrubar tudo e apagar os dados: `docker compose down -v`.
+
+> Se o seu Docker não reconhecer `docker compose` (o plugin v2), use `docker-compose` com hífen — os comandos são os mesmos.
+
+> As credenciais no [`docker-compose.yml`](docker-compose.yml) são fixas e voltadas para desenvolvimento. Para qualquer outro uso, gere seu próprio `JWT_SECRET` (`openssl rand -base64 32`) e troque as senhas dos bancos.
+
+Rodando fora do container, as variáveis exigidas no boot são `DATABASE_URL`, `DATABASE_USUARIO`, `DATABASE_SENHA`, `MONGO_URI`, `REDIS_URL`, `NEO4J_URI`, `NEO4J_USUARIO`, `NEO4J_SENHA` e `JWT_SECRET` — a aplicação não inicia sem elas.
+
+---
+
 ## 🏗️ Arquitetura e Destaques de Engenharia
 
 O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padrão do Spring (Controller, Service, Repository, Model), com separação estrita de responsabilidades e aplicação prática do Princípio da Responsabilidade Única (SRP).
@@ -118,4 +138,4 @@ A suíte tem **59 testes** e é pensada para rodar **sem depender de infraestrut
 * **`MaratonaApplicationTests`** (`contextLoads`) sobe o contexto completo da aplicação e por isso exige Postgres/Mongo/Neo4j/Redis e um `JWT_SECRET` reais. É marcado com `@Tag("integration")` e fica de fora do `./mvnw test` padrão.
 
 > [!NOTE]
-> 🧪 **Documentação Completa de Testes:** [Clique aqui para ler o arquivo TESTS.md](TESTS.md).
+> 🧪 **Demonstração ponta a ponta:** além da suíte acima, há uma coleção Postman/Newman de 41 requisições que exercita a API contra o ambiente real (bancos e Codeforces de verdade). [Veja `postman/`](postman/README.md).
