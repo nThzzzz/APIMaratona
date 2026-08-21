@@ -64,6 +64,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/cadastroTime").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/adicionarUsuario").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/removerUsuario").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/editarTime/**").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/excluirTime").authenticated()
                     // tudo o mais (cadastro, login, listagens e consultas de problemas) continua
                     // aberto -- proteger o resto fica para uma proxima etapa

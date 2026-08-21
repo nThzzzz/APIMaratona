@@ -51,7 +51,7 @@ A API usa **Spring Security + JWT** (stateless, sem sessão/cookie) para protege
 * **Uso do token:** envie o header `Authorization: Bearer <token>` nas rotas protegidas. Um filtro (`JwtAuthenticationFilter`) valida o token em toda requisição; se estiver ausente, inválido ou expirado, a rota protegida responde `401` com um corpo JSON padronizado (`JwtAuthenticationEntryPoint`).
 * **Dono do recurso:** o `nomeUsuario` contido no token precisa ser o mesmo da conta alvo da operação — token válido de outro usuário também resulta em `401`.
 * **Senhas (Sudo Mode):** Senhas são armazenadas com hash **BCrypt**. Para operações altamente sensíveis (como alterar e-mail, senha ou excluir a conta), o sistema exige a validação da senha atual no corpo da requisição, mesmo com o token JWT válido.
-* **Capitão do time:** times têm um capitão (definido no cadastro). Só ele pode adicionar membros, remover membros ou excluir o time — e, enquanto for capitão, não consegue excluir a própria conta.
+* **Capitão do time:** times têm um capitão (definido no cadastro). Só ele pode adicionar membros, remover membros, renomear o time, transferir a capitania ou excluir o time — e, enquanto for capitão, não consegue excluir a própria conta (para sair, transfere a capitania antes). O novo capitão precisa já ser integrante do time.
 * **Escopo atual (deliberadamente reduzido):** exigem token as rotas de edição (`PUT /editarUsuario/**`) e exclusão (`DELETE /excluirUsuario/**`) de usuário, mais as rotas de escrita de time (`POST /cadastroTime`, `PUT /adicionarUsuario`, `PUT /removerUsuario`, `DELETE /excluirTime`) — todas marcadas com 🔒 abaixo. O restante da API (cadastro, login, listagens e consultas de problemas) permanece público.
 
 ---
@@ -90,6 +90,8 @@ Gerencia os times (limitados a 3 integrantes) e a entrada/saída de membros.
 | `GET` | `/buscarTime` | Busca um time específico (Query: `?nome=`). |
 | `PUT` | `/adicionarUsuario` | 🔒 Adiciona usuários a um time existente. Só o capitão. |
 | `PUT` | `/removerUsuario` | 🔒 Remove usuários específicos de um time. Só o capitão. |
+| `PUT` | `/editarTime/{nomeTime}/nome` | 🔒 Renomeia o time. Só o capitão. |
+| `PUT` | `/editarTime/{nomeTime}/capitao` | 🔒 Transfere a capitania para outro integrante do time. Só o capitão. |
 | `DELETE` | `/excluirTime` | 🔒 Exclui o time (usuários ficam "Sem time"). Só o capitão. |
 
 ### 🧩 Problemas e Recomendações (`/`)

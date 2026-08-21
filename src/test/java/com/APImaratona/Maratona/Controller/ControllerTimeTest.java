@@ -1,6 +1,7 @@
 package com.APImaratona.Maratona.Controller;
 
 import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
+import com.APImaratona.Maratona.DTO.Time.TimeRequest;
 import com.APImaratona.Maratona.DTO.Time.TimeResponse;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
@@ -197,6 +198,66 @@ class ControllerTimeTest extends ApiControllerTestSupport {
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("PUT /editarTime/{nomeTime}/nome com sucesso retorna 200")
+    void editarNomeTimeSucesso() throws Exception {
+        var dto = new TimeRequest.AlterarNomeTime("Timacao");
+        doNothing().when(timeService).editarNomeTime(eq("Timaco"), any(), eq("fulano"));
+
+        MvcResult resultado = chamar("Renomear time como capitao", put("/editarTime/Timaco/nome")
+                .principal(CAPITAO)
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("nome alterado com sucesso");
+    }
+
+    @Test
+    @DisplayName("PUT /editarTime/{nomeTime}/nome por quem nao e o capitao retorna 400")
+    void editarNomeTimeSemSerCapitao() throws Exception {
+        var dto = new TimeRequest.AlterarNomeTime("Timacao");
+        doThrow(new RegraDeNegocio("Usuario não é o capitão do time, não pode renomear o time"))
+                .when(timeService).editarNomeTime(eq("Timaco"), any(), eq("intruso"));
+
+        MvcResult resultado = chamar("Renomear sem ser capitao", put("/editarTime/Timaco/nome")
+                .principal(new UsernamePasswordAuthenticationToken("intruso", null))
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+        assertThat(resultado.getResponse().getContentAsString()).contains("não é o capitão");
+    }
+
+    @Test
+    @DisplayName("PUT /editarTime/{nomeTime}/capitao com sucesso retorna 200")
+    void transferirCapitaniaSucesso() throws Exception {
+        var dto = new TimeRequest.TransferirCapitania("sicrano");
+        doNothing().when(timeService).transferirCapitania(eq("Timaco"), any(), eq("fulano"));
+
+        MvcResult resultado = chamar("Transferir capitania", put("/editarTime/Timaco/capitao")
+                .principal(CAPITAO)
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("capitania transferida para: sicrano");
+    }
+
+    @Test
+    @DisplayName("PUT /editarTime/{nomeTime}/capitao com nome em branco e barrado pelo @Valid")
+    void transferirCapitaniaNomeEmBranco() throws Exception {
+        var dto = new TimeRequest.TransferirCapitania("  ");
+
+        MvcResult resultado = chamar("Novo capitao em branco", put("/editarTime/Timaco/capitao")
+                .principal(CAPITAO)
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Nome do novo capitão nulo");
     }
 
     @Test
