@@ -34,6 +34,13 @@ jwt:
   secret: ${JWT_SECRET}
   expiracao-ms: 3600000 # 1 hora
 
+# Requisicoes por IP, por janela, nas duas rotas publicas de escrita.
+# Contador em memoria: ver a limitacao descrita no RateLimitFilter.
+rate-limit:
+  login: ${RATE_LIMIT_LOGIN:30}
+  cadastro: ${RATE_LIMIT_CADASTRO:10}
+  janela-segundos: ${RATE_LIMIT_JANELA:60}
+
 management:
   endpoints:
     web:

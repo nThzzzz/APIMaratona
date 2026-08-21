@@ -26,7 +26,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request, HttpServletResponse response,
                           AuthenticationException authException) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
+        // Sem o charset explicito o getWriter() usa o padrao da plataforma (ISO-8859-1) e
+        // "invalido" volta com o acento corrompido.
+        response.setContentType("application/json;charset=UTF-8");
 
         ErrorResponseDTO erro = new ErrorResponseDTO(
                 LocalDateTime.now(),

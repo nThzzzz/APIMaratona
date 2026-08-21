@@ -71,6 +71,11 @@ services:
       # Chave HMAC em Base64. Valor de desenvolvimento: gere a sua para qualquer
       # uso que nao seja local (`openssl rand -base64 32`).
       JWT_SECRET: ${JWT_SECRET:-zWvbngQl1NZ/rCawtYmhf+a+toMdWLAGEOGrgZ9QWYE=}
+      # Requisicoes por IP, por janela, em /auth/login e /cadastro. Os padroes deixam
+      # a colecao do Newman passar folgada (ela faz 10 logins e 4 cadastros por rodada).
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-30}
+      RATE_LIMIT_CADASTRO: ${RATE_LIMIT_CADASTRO:-10}
+      RATE_LIMIT_JANELA: ${RATE_LIMIT_JANELA:-60}
     depends_on:
       postgres:
         condition: service_healthy

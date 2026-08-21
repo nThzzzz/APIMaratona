@@ -2,6 +2,8 @@ package com.APImaratona.Maratona.Configuracao;
 
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationEntryPoint;
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationFilter;
+import com.APImaratona.Maratona.Seguranca.RateLimitFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +29,17 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final RateLimitFilter rateLimitFilter;
+
+    // O Spring Boot registra automaticamente qualquer bean do tipo Filter no container
+    // de servlets. Como o RateLimitFilter e posicionado a mao na cadeia de seguranca
+    // logo abaixo, esse registro paralelo e desligado para ele existir num lugar so.
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> registroRateLimitDesligado(RateLimitFilter filtro) {
+        FilterRegistrationBean<RateLimitFilter> registro = new FilterRegistrationBean<>(filtro);
+        registro.setEnabled(false);
+        return registro;
+    }
 
     // BCrypt: funcao de hash de senha de mao unica, com "sal" aleatorio embutido em
     // cada hash gerado -- por isso a mesma senha gera hashes diferentes toda vez,
@@ -86,6 +99,11 @@ public class SecurityConfig {
                     .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            // Os dois sao ancorados no UsernamePasswordAuthenticationFilter porque o
+            // addFilterBefore so aceita como referencia um filtro que o Spring Security
+            // conheca -- filtro proprio nao tem ordem registrada. Barrar aqui ja evita
+            // gastar BCrypt e ida ao banco com requisicao acima do limite.
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
