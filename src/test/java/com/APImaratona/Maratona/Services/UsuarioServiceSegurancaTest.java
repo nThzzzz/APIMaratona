@@ -1,6 +1,7 @@
 package com.APImaratona.Maratona.Services;
 
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequest;
+import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Model.Usuario;
 import com.APImaratona.Maratona.Repository.Jpa.TimeRepository;
@@ -110,9 +111,18 @@ class UsuarioServiceSegurancaTest {
     }
 
     @Test
-    @DisplayName("excluirUsuarioEmail recusa email que pertence a outra conta que nao a do path")
+    @DisplayName("excluirUsuarioEmail recusa email que pertence a outra conta")
     void excluirPorEmailDeOutraConta() {
         usuarioSalvo();
+
+        // A conta alvo vem do path; o email do corpo so confirma. Aqui o sicrano tenta
+        // excluir a propria conta confirmando com o email do fulano.
+        Usuario sicrano = new Usuario();
+        sicrano.setNomeUsuario("sicrano");
+        sicrano.setEmail("sicrano@teste.com");
+        sicrano.setSenha(segHelperService.encodarSenha(SENHA_ATUAL));
+        when(usuarioRepo.existsByNomeUsuario("sicrano")).thenReturn(true);
+        when(usuarioRepo.findByNomeUsuario("sicrano")).thenReturn(sicrano);
 
         assertThatThrownBy(() -> usuarioService.excluirUsuarioEmail(
                 "sicrano", new UsuarioRequest.ExcluirUsuarioEmail("fulano@teste.com", SENHA_ATUAL), "sicrano"))
@@ -120,6 +130,21 @@ class UsuarioServiceSegurancaTest {
                 .hasMessageContaining("não pertence ao usuário sicrano");
 
         verify(usuarioRepo, never()).delete(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("token de outra conta e recusado antes de qualquer verificacao de senha")
+    void tokenDeOutraConta() {
+        usuarioSalvo();
+
+        // Cobre o buscarContaDoDono, que centraliza "existe?" + "o token e dele?" para
+        // as seis operacoes de conta.
+        assertThatThrownBy(() -> usuarioService.editarPerfilNome(
+                "fulano", new UsuarioRequest.AlterarNome("Invadido"), "outraPessoa"))
+                .isInstanceOf(AutenticacaoInvalidaException.class)
+                .hasMessage("Token não corresponde a este usuário");
+
+        verify(usuarioRepo, never()).save(any(Usuario.class));
     }
 
     @Test

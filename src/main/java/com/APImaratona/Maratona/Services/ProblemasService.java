@@ -82,12 +82,15 @@ public class ProblemasService {
 
         Set<UsuarioNode> usuariosNodes = problemaNode.get().getUsuariosResolveram();
 
+        List<String> nomesUsuarios = new ArrayList<>();
         for(UsuarioNode uNode : usuariosNodes) {
-            Usuario usuario = usuarioRepository.findByNomeUsuario(uNode.getNomeUsuario());
+            nomesUsuarios.add(uNode.getNomeUsuario());
+        }
 
-            if (usuario != null) {
-                usuariosDTO.add(UsuarioResponse.fromEntity(usuario));
-            }
+        // Uma consulta em lote no lugar de uma por usuario. Quem esta no grafo mas nao
+        // no Postgres simplesmente nao volta, que era o que o if de null tratava antes.
+        for(Usuario usuario : usuarioRepository.findAllByNomeUsuarioIn(nomesUsuarios)) {
+            usuariosDTO.add(UsuarioResponse.fromEntity(usuario));
         }
 
         return usuariosDTO;
@@ -110,17 +113,15 @@ public class ProblemasService {
 
         Set<ProblemaNode> problemasResolvidos = problemas.get().getProblemasResolvidos();
 
+        List<String> idsProblemas = new ArrayList<>();
         for(ProblemaNode pb : problemasResolvidos){
-            Problema problemaFull = problemaRepository.findByIdProblema(pb.getIdProblema());
-
-            // O grafo pode ter a relacao sem que o problema tenha sido salvo no Mongo
-            // (o cadastro no Neo4j vem antes e sobrevive a falha do scraping).
-            if(problemaFull != null){
-                listaProblemas.add(problemaFull);
-            }
+            idsProblemas.add(pb.getIdProblema());
         }
 
-        return listaProblemas;
+        // Uma consulta em lote no lugar de uma por problema. Como idProblema e o _id do
+        // documento, o findAllById resolve direto -- e o que estiver so no grafo, sem ter
+        // sido salvo no Mongo, apenas nao volta.
+        return problemaRepository.findAllById(idsProblemas);
     }
 
     @Cacheable(value = "cacheTodosProblemas")
@@ -207,13 +208,18 @@ public class ProblemasService {
     }
 
     private List<Problema> buscarProblemasPorId(List<String> idsProblemas){
+        // Busca em lote, mas o findAllById nao garante a ordem -- e aqui a ordem E o
+        // ranking da recomendacao, entao a lista e remontada seguindo os ids originais.
+        Map<String, Problema> porId = new HashMap<>();
+        for(Problema p : problemaRepository.findAllById(idsProblemas)){
+            porId.put(p.getIdProblema(), p);
+        }
+
         List<Problema> problemas = new ArrayList<>();
-
         for(String id : idsProblemas){
-            Problema problema = problemaRepository.findByIdProblema(id);
+            Problema problema = porId.get(id);
 
-            // Mesma situacao de problemasFeitosPor: recomendacao vinda do grafo pode
-            // apontar para um problema ausente no Mongo -- fica de fora em vez de virar null.
+            // A recomendacao pode apontar para um problema ausente no Mongo.
             if(problema != null){
                 problemas.add(problema);
             }

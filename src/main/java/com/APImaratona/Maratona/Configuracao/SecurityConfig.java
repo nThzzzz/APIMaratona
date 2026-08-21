@@ -75,8 +75,7 @@ public class SecurityConfig {
                             "/usuariosFizeramProblema/**",
                             "/problemasFeitorPor/**",
                             "/recomendarProblemaRating/**",
-                            "/recomendarProblemaSimilaridade/**",
-                            "/teste").permitAll()
+                            "/recomendarProblemaSimilaridade/**").permitAll()
 
                     // Health check: precisa responder sem credencial para o compose e
                     // qualquer orquestrador conseguirem saber se a aplicacao subiu.

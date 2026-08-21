@@ -15,11 +15,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ControllerUsuario {
 
-    @GetMapping("/teste")
-    public String teste(){
-        return "teste";
-    }
-
     private final UsuarioService usuarioService;
     private final CodeforcesService codeforcesService;
 

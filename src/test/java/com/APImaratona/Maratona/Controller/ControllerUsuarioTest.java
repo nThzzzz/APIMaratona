@@ -81,15 +81,6 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     // ------------------------------ Cadastro ------------------------------
 
     @Test
-    @DisplayName("GET /teste responde 200 com texto fixo")
-    void teste() throws Exception {
-        MvcResult resultado = chamar("Endpoint de teste basico", get("/teste"));
-
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        assertThat(resultado.getResponse().getContentAsString()).isEqualTo("teste");
-    }
-
-    @Test
     @DisplayName("POST /cadastro com dados validos cadastra e dispara sync com Codeforces")
     void cadastroUsuarioSucesso() throws Exception {
         doNothing().when(usuarioService).cadastrarUsuario(any());

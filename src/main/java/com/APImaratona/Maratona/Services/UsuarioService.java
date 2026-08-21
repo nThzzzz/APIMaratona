@@ -103,24 +103,13 @@ public class UsuarioService {
             @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
     })
     public void excluirUsuarioEmail(String nomeUsuario, UsuarioRequest.ExcluirUsuarioEmail dto, String nomeUsuarioAutenticado){
-        Usuario u;
+        Usuario u = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
 
-        if(!usuarioRepo.existsByEmail(dto.email())){
-            throw new EntidadeNaoEcontrada("Email de usuario nao encontrado");
-        }
-
-        u = usuarioRepo.findByEmail(dto.email());
-
-        // A rota e /excluirUsuario/{nomeUsuario}/email: o email do corpo precisa apontar
-        // para a mesma conta do path, senao a mensagem de sucesso mentiria sobre quem saiu.
-        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuario)){
+        // A rota e /excluirUsuario/{nomeUsuario}/email: quem manda o email de outra conta
+        // nao esta confirmando nada, entao o email funciona como segunda confirmacao --
+        // mesmo papel da senha logo abaixo.
+        if(!u.getEmail().equals(dto.email())){
             throw new RegraDeNegocio("O email informado não pertence ao usuário " + nomeUsuario);
-        }
-
-        // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
-        // mesmo que a senha informada por algum motivo bata com a de outra conta.
-        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuarioAutenticado)){
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
         if(!segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
@@ -136,23 +125,30 @@ public class UsuarioService {
             @CacheEvict(value = "cacheProblemasUsuario", allEntries = true)
     })
     public void excluirUsuarioNomeUsuario(String nomeUsuario, UsuarioRequest.ExcluirUsuarioNomeUsuario dto, String nomeUsuarioAutenticado){
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)){
-            throw new EntidadeNaoEcontrada("Nome de usuario nao encontrado");
-        }
-
-        Usuario u = usuarioRepo.findByNomeUsuario(nomeUsuario);
-
-        // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
-        // mesmo que a senha informada por algum motivo bata com a de outra conta.
-        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuarioAutenticado)){
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
-        }
+        Usuario u = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
 
         if(!segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
             throw new RegraDeNegocio("Senha incorreta");
         }
 
         excluirConta(u);
+    }
+
+    // Toda operacao de conta e sobre a PROPRIA conta. Centralizado porque a dupla
+    // "existe?" + "o token e dele?" estava copiada em seis metodos: um service novo que
+    // esquecesse a segunda metade deixaria qualquer autenticado mexer em conta alheia.
+    private Usuario buscarContaDoDono(String nomeUsuario, String nomeUsuarioAutenticado){
+        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
+            throw new EntidadeNaoEcontrada("Usuário não encontrado");
+        }
+
+        // O token JWT prova quem esta chamando; so deixa agir sobre a propria conta,
+        // mesmo que a senha informada por algum motivo bata com a de outra conta.
+        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
+            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
+        }
+
+        return usuarioRepo.findByNomeUsuario(nomeUsuario);
     }
 
     // Parte final comum das duas rotas de exclusao: solta o usuario do time (se houver) e
@@ -179,15 +175,7 @@ public class UsuarioService {
             @CacheEvict(value = "cacheProblemasUsuario", key = "#nomeUsuario")
     })
     public LoginResponse editarNomeUsuario(String nomeUsuario, UsuarioRequest.AlterarNomeUsuario dto, String nomeUsuarioAutenticado) {
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
-            throw new EntidadeNaoEcontrada("Usuário não encontrado");
-        }
-
-        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
-        }
-
-        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        Usuario usuario = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
 
         if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
             throw new RegraDeNegocio("Senha incorreta");
@@ -217,15 +205,7 @@ public class UsuarioService {
     }
 
     public void editarEmailUsuario(String nomeUsuario, UsuarioRequest.AlterarEmail dto, String nomeUsuarioAutenticado) {
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
-            throw new EntidadeNaoEcontrada("Usuário não encontrado");
-        }
-
-        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
-        }
-
-        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        Usuario usuario = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
         if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
             throw new RegraDeNegocio("Senha incorreta");
         }
@@ -246,15 +226,7 @@ public class UsuarioService {
     }
 
     public void editarSenhaUsuario(String nomeUsuario, UsuarioRequest.AlterarSenha dto, String nomeUsuarioAutenticado) {
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
-            throw new EntidadeNaoEcontrada("Usuário não encontrado");
-        }
-
-        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
-        }
-
-        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        Usuario usuario = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
         if(!segHelperService.verificaSenha(usuario.getSenha(), dto.senhaAtual())) {
             throw new RegraDeNegocio("Senha incorreta");
         }
@@ -272,15 +244,7 @@ public class UsuarioService {
 
 
     public void editarPerfilNome(String nomeUsuario, UsuarioRequest.AlterarNome dto, String nomeUsuarioAutenticado){
-        if(!usuarioRepo.existsByNomeUsuario(nomeUsuario)) {
-            throw new EntidadeNaoEcontrada("Usuário não encontrado");
-        }
-
-        if(!segHelperService.saoMesmoUsuario(nomeUsuario, nomeUsuarioAutenticado)) {
-            throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
-        }
-
-        Usuario usuario = usuarioRepo.findByNomeUsuario(nomeUsuario);
+        Usuario usuario = buscarContaDoDono(nomeUsuario, nomeUsuarioAutenticado);
 
         String novoNome = dto.nomeNovo();
         if(usuario.getNome().equals(novoNome)) {
