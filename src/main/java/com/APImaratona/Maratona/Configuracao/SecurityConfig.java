@@ -54,21 +54,37 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable) // API stateless com token, sem cookie/sessao de browser
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
+            // Deny by default: o que nao estiver listado abaixo exige token. A postura
+            // anterior era a inversa (permitAll no final, protegidas por excecao) e falhava
+            // do lado errado -- esquecer um matcher deixava a rota ABERTA em silencio, o que
+            // ja aconteceu duas vezes com matchers sem o /**. Aqui o esquecimento fecha a
+            // rota: chato, mas aparece na primeira chamada em vez de virar brecha.
             .authorizeHttpRequests(auth -> auth
-                    // Rotas que exigem token valido. Atencao ao /**: as rotas de usuario tem
-                    // segmentos depois do prefixo (ex: /excluirUsuario/{nomeUsuario}/email) e um
-                    // matcher sem /** NAO casa com elas -- cairiam no permitAll la embaixo e o
-                    // 401 so apareceria (ou nao) la dentro do service.
-                    .requestMatchers(HttpMethod.PUT, "/editarUsuario/**").authenticated()
-                    .requestMatchers(HttpMethod.DELETE, "/excluirUsuario/**").authenticated()
-                    .requestMatchers(HttpMethod.POST, "/cadastroTime").authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/adicionarUsuario").authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/removerUsuario").authenticated()
-                    .requestMatchers(HttpMethod.PUT, "/editarTime/**").authenticated()
-                    .requestMatchers(HttpMethod.DELETE, "/excluirTime").authenticated()
-                    // tudo o mais (cadastro, login, listagens e consultas de problemas) continua
-                    // aberto -- proteger o resto fica para uma proxima etapa
-                    .anyRequest().permitAll()
+                    // Entrada no sistema: sem elas ninguem consegue obter um token.
+                    .requestMatchers(HttpMethod.POST, "/auth/login", "/cadastro").permitAll()
+
+                    // Consultas de leitura, abertas de proposito -- os dados sao publicos
+                    // (ranking, times e problemas do Codeforces) e nao expoem senha.
+                    .requestMatchers(HttpMethod.GET,
+                            "/listaUsuarios",
+                            "/buscarUsuario/**",
+                            "/listarTimes",
+                            "/buscarTime",
+                            "/listarProblemas",
+                            "/buscarProblema/**",
+                            "/usuariosFizeramProblema/**",
+                            "/problemasFeitorPor/**",
+                            "/recomendarProblemaRating/**",
+                            "/recomendarProblemaSimilaridade/**",
+                            "/teste").permitAll()
+
+                    // Health check: precisa responder sem credencial para o compose e
+                    // qualquer orquestrador conseguirem saber se a aplicacao subiu.
+                    .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+
+                    // Escrita de conta e de time, e qualquer rota nova que ninguem lembrou
+                    // de classificar.
+                    .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

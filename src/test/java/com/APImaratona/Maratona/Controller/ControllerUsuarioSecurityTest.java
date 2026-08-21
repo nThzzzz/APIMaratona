@@ -150,4 +150,14 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
     }
+
+    @Test
+    @DisplayName("Rota nao listada no SecurityConfig exige token (postura deny by default)")
+    void rotaDesconhecidaExigeToken() throws Exception {
+        // Trava a inversao da postura: com o antigo anyRequest().permitAll() um caminho
+        // desconhecido passava pela seguranca e respondia 404. Agora para no filtro.
+        MvcResult resultado = chamar("Caminho sem matcher explicito", get("/rotaQueNinguemClassificou"));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
+    }
 }
