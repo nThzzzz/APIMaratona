@@ -13,10 +13,15 @@
       "value": "",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "idProblema",
+      "value": "",
+      "type": "default",
+      "enabled": true
     }
   ],
   "color": null,
   "_postman_variable_scope": "environment",
-  "_postman_exported_at": "2026-07-24T20:24:20.269Z",
   "_postman_exported_using": "Postman/12.19.6"
 }

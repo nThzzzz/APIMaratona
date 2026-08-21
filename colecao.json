@@ -2,29 +2,48 @@
   "info": {
     "_postman_id": "5dd6fb88-b8da-461d-9e2d-5cf81c30a7e7",
     "name": "TestesAPIMaratona",
-    "description": "## TestesAPIMaratona\n\nThis collection contains the automated tests and exploratory requests for the **Maratona API** — a platform that manages users, teams, and competitive programming problems.\n\n### Structure\n\n- **Cadastros** — Registration requests for users (`POST /cadastro`) and teams (`POST /cadastroTime`).\n    \n- **Pesquisas** — Search and listing requests, organized into three sub-groups:\n    \n    - **Time** — List all teams and search a team by name.\n        \n    - **Usuario** — List all users and search a user by username.\n        \n    - **Problemas** — List and search problems, find users who solved a problem, list problems solved by a user, and get problem recommendations by rating or similarity.\n        \n- **Edicao** — Update operations: user login, add/remove a user from a team, and edit user data.\n    \n- **Deletar** — Delete operations: remove a user and delete a team.\n    \n\n### Authentication\n\nRequests that require authentication use a JWT token stored in the `{{token_jwt}}` environment variable. The base URL is configured via `{{url}}`.",
+    "description": "## TestesAPIMaratona\n\nDemonstracao ponta a ponta da **API Maratona** contra um ambiente real. Todas as\nrequisicoes devem responder **200**; qualquer outro status reprova no relatorio.\n\n### Como rodar\n\n```\nnewman run colecao.json -e ambiente.json -r cli,htmlextra\n```\n\nSuba a aplicacao antes e confira o `url` no ambiente (padrao `http://localhost:8080`).\n\n### Ordem\n\nAs pastas sao numeradas porque a execucao e sequencial e cada uma depende do estado\ndeixada pela anterior:\n\n1. **Cadastros** - cria os 4 usuarios e os 2 times.\n2. **Pesquisas** - rotas publicas de consulta.\n3. **Edicao** - edicao de time (so o capitao) e de conta (so o dono).\n4. **Deletar** - limpeza, para a colecao poder rodar de novo.\n\n### Usuarios\n\nOs 4 `nomeUsuario` sao **handles reais do Codeforces** (`arthurb.zanvetor`,\n`alexandre.dpierri`, `becastal`, `albert__`). Precisam ser reais: o cadastro consulta\no perfil para preencher rating e rank, e sincroniza os problemas resolvidos em\nbackground. Trocar por nomes inventados nao quebra a coleccao, mas o rating vem zerado\ne as rotas de problema devolvem listas vazias.\n\n### Problemas\n\nA sincronizacao com o Codeforces e assincrona e passa por web scraping, entao numa base\nnova o Mongo ainda esta vazio quando a pasta de Pesquisas roda. Por isso `Listar\nproblemas` captura um `idProblema` que existe de fato, e as duas requisicoes que dependem\ndele se pulam sozinhas quando nao ha nenhum. Os problemas nao sao apagados na limpeza,\nentao a partir da segunda execucao eles ja estao la.\n\n### Autenticacao\n\nA colecao usa Bearer com `{{token_jwt}}`, preenchido pelos `/auth/login` e pela troca de\n`nomeUsuario`. As rotas publicas ignoram o header.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "53834297",
-    "_collection_link": "https://go.postman.co/collection/53834297-5dd6fb88-b8da-461d-9e2d-5cf81c30a7e7?source=collection_link"
+    "_exporter_id": "53834297"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token_jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vale para toda requisicao da colecao: o objetivo da demo e 200 em tudo.",
+          "pm.test(\"Status 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});"
+        ]
+      }
+    }
+  ],
   "item": [
     {
-      "name": "Cadastros",
+      "name": "1. Cadastros",
       "item": [
         {
-          "name": "Cadastro1",
+          "name": "Cadastro arthurb.zanvetor",
           "request": {
             "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"email\": \"arthur@email.com\",\n    \"nome\": \"Arthur\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"arthurb.zanvetor\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n\n/* \n\n{\n  \"nome\": \"Arthur Zanvetor\",\n  \"email\": \"arthur@exemplo.com\",\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\",\n  \"nomeTime\": \"Nome do Time\" //opcional \n}\n\n*/",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            },
+            ],
             "url": {
               "raw": "{{url}}/cadastro",
               "host": [
@@ -33,24 +52,30 @@
               "path": [
                 "cadastro"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cadastro2",
-          "request": {
-            "method": "POST",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"alexandre@email.com\",\n    \"nome\": \"Alexandre\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"alexandre.dpierri\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n\n/* \n\n{\n  \"nome\": \"Arthur Zanvetor\",\n  \"email\": \"arthur@exemplo.com\",\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\",\n  \"nomeTime\": \"Nome do Time\" //opcional \n}\n\n*/",
+              "raw": "{\n    \"nome\": \"Arthur\",\n    \"email\": \"arthur@email.com\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"arthurb.zanvetor\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Handle real do Codeforces. O cadastro dispara a sincronizacao assincrona do perfil (rating, rank e problemas resolvidos)."
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastro alexandre.dpierri",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/cadastro",
               "host": [
@@ -59,24 +84,29 @@
               "path": [
                 "cadastro"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cadastro3",
-          "request": {
-            "method": "POST",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"bernardo@email.com\",\n    \"nome\": \"Bernardo\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"becastal\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n\n/* \n\n{\n  \"nome\": \"Arthur Zanvetor\",\n  \"email\": \"arthur@exemplo.com\",\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\",\n  \"nomeTime\": \"Nome do Time\" //opcional \n}\n\n*/",
+              "raw": "{\n    \"nome\": \"Alexandre\",\n    \"email\": \"alexandre@email.com\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"alexandre.dpierri\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastro becastal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/cadastro",
               "host": [
@@ -85,24 +115,29 @@
               "path": [
                 "cadastro"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Cadastro4",
-          "request": {
-            "method": "POST",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"albertini@email.com\",\n    \"nome\": \"Gabriel\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"albert__\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n\n/* \n\n{\n  \"nome\": \"Arthur Zanvetor\",\n  \"email\": \"arthur@exemplo.com\",\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\",\n  \"nomeTime\": \"Nome do Time\" //opcional \n}\n\n*/",
+              "raw": "{\n    \"nome\": \"Bernardo\",\n    \"email\": \"bernardo@email.com\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"becastal\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cadastro albert__",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/cadastro",
               "host": [
@@ -111,24 +146,76 @@
               "path": [
                 "cadastro"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Gabriel\",\n    \"email\": \"albertini@email.com\",\n    \"senha\": \"123\",\n    \"nomeUsuario\": \"albert__\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": []
         },
         {
-          "name": "Time1",
+          "name": "Login arthurb.zanvetor",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nomeTime\": \"time1\",\n  \"nomesUsuarios\": [\n    \"alexandre.dpierri\",\n    \"albert__\",\n    \"becastal\"\n  ]\n}",
+              "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Autentica como arthurb.zanvetor e guarda o JWT em {{token_jwt}}."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastro time1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/cadastroTime",
               "host": [
@@ -137,24 +224,77 @@
               "path": [
                 "cadastroTime"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Time2",
-          "request": {
-            "method": "POST",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nomeTime\": \"time2\",\n  \"nomesUsuarios\": []\n}",
+              "raw": "{\n    \"nomeTime\": \"time1\",\n    \"nomesUsuarios\": [\n        \"arthurb.zanvetor\",\n        \"alexandre.dpierri\",\n        \"becastal\"\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Exige token. Quem cria vira capitao e precisa estar na lista de membros. Tres integrantes e o maximo permitido."
+          },
+          "response": []
+        },
+        {
+          "name": "Login albert__",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"albert__\",\n    \"senhaAtual\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Autentica como albert__ e guarda o JWT em {{token_jwt}}."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastro time2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/cadastroTime",
               "host": [
@@ -163,21 +303,31 @@
               "path": [
                 "cadastroTime"
               ]
-            }
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeTime\": \"time2\",\n    \"nomesUsuarios\": [\n        \"albert__\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Time so com o capitao."
           },
           "response": []
         }
       ],
-      "description": "Contains registration requests for the Maratona API. Includes multiple `POST /cadastro` scenarios for creating new users, as well as `POST /cadastroTime` requests for registering new teams. Use these requests to test the onboarding flow for both individual participants and groups."
+      "description": "Cria os 4 usuarios (handles reais do Codeforces) e os 2 times. O login antes de cada /cadastroTime e obrigatorio: a rota exige token e o autenticado vira o capitao."
     },
     {
-      "name": "Pesquisas",
+      "name": "2. Pesquisas",
       "item": [
         {
           "name": "Time",
           "item": [
             {
-              "name": "ListarTimes",
+              "name": "Listar times",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -194,7 +344,7 @@
               "response": []
             },
             {
-              "name": "BuscarTime",
+              "name": "Buscar time",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -222,7 +372,7 @@
           "name": "Usuario",
           "item": [
             {
-              "name": "ListarUsuarios",
+              "name": "Listar usuarios",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -239,25 +389,21 @@
               "response": []
             },
             {
-              "name": "BuscarNomeUsuario",
+              "name": "Buscar usuario",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{url}}/buscarUsuario?nomeUsuario=arthurb.zanvetor",
+                  "raw": "{{url}}/buscarUsuario/arthurb.zanvetor",
                   "host": [
                     "{{url}}"
                   ],
                   "path": [
-                    "buscarUsuario"
-                  ],
-                  "query": [
-                    {
-                      "key": "nomeUsuario",
-                      "value": "arthurb.zanvetor"
-                    }
+                    "buscarUsuario",
+                    "arthurb.zanvetor"
                   ]
-                }
+                },
+                "description": "Path variable. O ponto no handle nao e truncado."
               },
               "response": []
             }
@@ -267,17 +413,10 @@
           "name": "Problemas",
           "item": [
             {
-              "name": "listarProblemas",
-              "protocolProfileBehavior": {
-                "disableBodyPruning": true
-              },
+              "name": "Listar problemas",
               "request": {
                 "method": "GET",
                 "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
-                },
                 "url": {
                   "raw": "{{url}}/listarProblemas",
                   "host": [
@@ -286,71 +425,108 @@
                   "path": [
                     "listarProblemas"
                   ]
-                }
+                },
+                "description": "Alem de listar, guarda o id do primeiro problema em {{idProblema}} para as duas requisicoes seguintes."
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Pega um idProblema que existe de fato, em vez de chutar um fixo:",
+                      "// o conteudo do Mongo depende de quais problemas os 4 handles resolveram.",
+                      "const problemas = pm.response.json();",
+                      "if (Array.isArray(problemas) && problemas.length > 0) {",
+                      "    pm.environment.set(\"idProblema\", problemas[0].idProblema);",
+                      "    console.log(\"idProblema capturado: \" + problemas[0].idProblema);",
+                      "} else {",
+                      "    pm.environment.unset(\"idProblema\");",
+                      "    console.log(\"Mongo ainda sem problemas - a sync do Codeforces pode nao ter terminado\");",
+                      "}"
+                    ]
+                  }
+                }
+              ]
             },
             {
-              "name": "buscarProblema",
-              "protocolProfileBehavior": {
-                "disableBodyPruning": true
-              },
+              "name": "Buscar problema",
               "request": {
                 "method": "GET",
                 "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
-                },
                 "url": {
-                  "raw": "{{url}}/4A",
+                  "raw": "{{url}}/buscarProblema/{{idProblema}}",
                   "host": [
                     "{{url}}"
                   ],
                   "path": [
-                    "4A"
+                    "buscarProblema",
+                    "{{idProblema}}"
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// A sync do Codeforces e @Async: numa base recem-criada o Mongo ainda esta vazio.",
+                      "// Sem um idProblema real, esta requisicao daria 404 -- entao ela e pulada.",
+                      "if (!pm.environment.get(\"idProblema\")) {",
+                      "    console.log(\"Nenhum problema no Mongo ainda - pulando \" + pm.info.requestName);",
+                      "    if (typeof pm.execution !== \"undefined\" && pm.execution.skipRequest) {",
+                      "        pm.execution.skipRequest();",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
             },
             {
-              "name": "usuariosFizeramProblema",
-              "protocolProfileBehavior": {
-                "disableBodyPruning": true
-              },
+              "name": "Usuarios que fizeram o problema",
               "request": {
                 "method": "GET",
                 "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
-                },
                 "url": {
-                  "raw": "{{url}}/usuariosFizeramProblema/4A",
+                  "raw": "{{url}}/usuariosFizeramProblema/{{idProblema}}",
                   "host": [
                     "{{url}}"
                   ],
                   "path": [
                     "usuariosFizeramProblema",
-                    "4A"
+                    "{{idProblema}}"
                   ]
                 }
               },
-              "response": []
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// A sync do Codeforces e @Async: numa base recem-criada o Mongo ainda esta vazio.",
+                      "// Sem um idProblema real, esta requisicao daria 404 -- entao ela e pulada.",
+                      "if (!pm.environment.get(\"idProblema\")) {",
+                      "    console.log(\"Nenhum problema no Mongo ainda - pulando \" + pm.info.requestName);",
+                      "    if (typeof pm.execution !== \"undefined\" && pm.execution.skipRequest) {",
+                      "        pm.execution.skipRequest();",
+                      "    }",
+                      "}"
+                    ]
+                  }
+                }
+              ]
             },
             {
-              "name": "problemasFeitosPor",
-              "protocolProfileBehavior": {
-                "disableBodyPruning": true
-              },
+              "name": "Problemas feitos por",
               "request": {
                 "method": "GET",
                 "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"nomeUsuario\": \"sla_3\",\n    \"senha\": \"123\"\n}"
-                },
                 "url": {
                   "raw": "{{url}}/problemasFeitorPor/arthurb.zanvetor",
                   "host": [
@@ -360,12 +536,13 @@
                     "problemasFeitorPor",
                     "arthurb.zanvetor"
                   ]
-                }
+                },
+                "description": "Lista vazia tambem e 200: o usuario existe, so pode ainda nao ter nada no grafo."
               },
               "response": []
             },
             {
-              "name": "RecomendarProblemaRating",
+              "name": "Recomendar por rating",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -383,7 +560,7 @@
               "response": []
             },
             {
-              "name": "RecomendarProblemaSimilares",
+              "name": "Recomendar por similaridade",
               "request": {
                 "method": "GET",
                 "header": [],
@@ -403,47 +580,463 @@
           ]
         }
       ],
-      "description": "Groups all search and listing requests for the Maratona API, organized into three sub-folders:\\n- **Time** — List all teams and search for a specific team by name.\\n- **Usuario** — List all users and look up a user by their username.\\n- **Problemas** — List and search problems, find users who solved a given problem, retrieve problems solved by a specific user, and get personalized problem recommendations by rating or similarity."
+      "description": "Rotas publicas, sem token. As de problema dependem da sincronizacao com o Codeforces, que roda em background depois do cadastro."
     },
     {
-      "name": "Edicao",
+      "name": "3. Edicao",
       "item": [
         {
-          "name": "loginUsuario",
-          "event": [
+          "name": "Time (so o capitao)",
+          "item": [
             {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Verifica se o login deu sucesso (Status 200)",
-                  "pm.test(\"Login realizado com sucesso\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "// Captura o corpo da resposta",
-                  "var resposta = pm.response.json();",
-                  "",
-                  "// Salva o token gerado na variável de ambiente do Postman",
-                  "pm.environment.set(\"token_jwt\", resposta.token);"
+              "name": "Login arthurb.zanvetor (capitao do time1)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
+                "url": {
+                  "raw": "{{url}}/auth/login",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senhaAtual\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Autentica como arthurb.zanvetor e guarda o JWT em {{token_jwt}}."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                      "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                      "const corpo = pm.response.json();",
+                      "pm.environment.set(\"token_jwt\", corpo.token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Remover usuario do time",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/removerUsuario",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "removerUsuario"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeTime\": \"time1\",\n    \"nomesUsuarios\": [\n        \"becastal\"\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Adicionar usuario ao time",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/adicionarUsuario",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "adicionarUsuario"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeTime\": \"time1\",\n    \"nomesUsuarios\": [\n        \"becastal\"\n    ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Devolve o becastal para o time1."
+              },
+              "response": []
+            },
+            {
+              "name": "Renomear time",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarTime/time1/nome",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarTime",
+                    "time1",
+                    "nome"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeTimeNovo\": \"time1-renomeado\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Transferir capitania",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarTime/time1-renomeado/capitao",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarTime",
+                    "time1-renomeado",
+                    "capitao"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeCapitaoNovo\": \"alexandre.dpierri\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "O novo capitao precisa ja ser integrante do time. Depois disso o arthurb.zanvetor deixa de ser capitao e pode excluir a propria conta."
+              },
+              "response": []
             }
-          ],
+          ]
+        },
+        {
+          "name": "Usuario (so o dono da conta)",
+          "item": [
+            {
+              "name": "Login becastal",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/auth/login",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeUsuario\": \"becastal\",\n    \"senhaAtual\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Autentica como becastal e guarda o JWT em {{token_jwt}}."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                      "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                      "const corpo = pm.response.json();",
+                      "pm.environment.set(\"token_jwt\", corpo.token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Alterar nome de exibicao",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarUsuario/perfil/becastal/nome",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarUsuario",
+                    "perfil",
+                    "becastal",
+                    "nome"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeNovo\": \"Bernardo Castal\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Unica edicao que nao pede a senha atual: nome de exibicao nao e credencial."
+              },
+              "response": []
+            },
+            {
+              "name": "Alterar email",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarUsuario/credenciais/becastal/email",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarUsuario",
+                    "credenciais",
+                    "becastal",
+                    "email"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"emailNovo\": \"bernardo.novo@email.com\",\n    \"senhaAtual\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Alterar nomeUsuario",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarUsuario/credenciais/becastal/nomeUsuario",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarUsuario",
+                    "credenciais",
+                    "becastal",
+                    "nomeUsuario"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeUsuarioNovo\": \"becastal.demo\",\n    \"senhaAtual\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Trocar o nomeUsuario invalida o token antigo (o subject mudou), entao a resposta ja traz um token novo -- capturado aqui."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                      "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                      "const corpo = pm.response.json();",
+                      "pm.environment.set(\"token_jwt\", corpo.token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Desfazer alteracao de nomeUsuario",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarUsuario/credenciais/becastal.demo/nomeUsuario",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarUsuario",
+                    "credenciais",
+                    "becastal.demo",
+                    "nomeUsuario"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nomeUsuarioNovo\": \"becastal\",\n    \"senhaAtual\": \"123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Volta para o handle real: com um nomeUsuario inventado a consulta ao Codeforces falha e o rating zera."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                      "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                      "const corpo = pm.response.json();",
+                      "pm.environment.set(\"token_jwt\", corpo.token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Alterar senha",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{url}}/editarUsuario/credenciais/becastal/senha",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "editarUsuario",
+                    "credenciais",
+                    "becastal",
+                    "senha"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"senhaAtual\": \"123\",\n    \"senhaNova\": \"456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Por ultimo de proposito: daqui pra frente a senha do becastal e 456."
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Toda edicao exige token, e o token precisa ser da conta (ou do capitao) alvo."
+    },
+    {
+      "name": "4. Deletar",
+      "item": [
+        {
+          "name": "Login alexandre.dpierri (capitao do time1)",
           "request": {
             "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeUsuario\": \"arthurb.zanvetor\",\n  \"senha\": \"123\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            },
+            ],
             "url": {
               "raw": "{{url}}/auth/login",
               "host": [
@@ -453,123 +1046,107 @@
                 "auth",
                 "login"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "removerUsuario",
-          "request": {
-            "method": "PUT",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nomeTime\": \"time1\",\n  \"nomesUsuarios\": [\"alexandre.dpierri\"]\n}\n\n/*\n{\n  \"nomeTime\": \"Nome do Time\",\n  \"nomesUsuarios\": [\n    \"usuario2\"\n  ]\n}\n*/",
+              "raw": "{\n    \"nomeUsuario\": \"alexandre.dpierri\",\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{url}}/removerUsuario",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "removerUsuario"
-              ]
-            }
+            "description": "Autentica como alexandre.dpierri e guarda o JWT em {{token_jwt}}."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "adicionarUsuario",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeTime\": \"time1\",\n  \"nomesUsuarios\": [\"arthurb.zanvetor\"]\n}\n\n/*\n{\n  \"nomeTime\": \"Nome do Time\",\n  \"nomesUsuarios\": [\n    \"novo_integrante\"\n  ]\n}\n*/",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{url}}/adicionarUsuario",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "adicionarUsuario"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "editarUsuario",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senhaAntiga\": \"123\",\n    \"senhaNova\": \"456\"\n}\n\n\n/*\nhttp://localhost:8080/editarUsuario/{nomeUsuario}\n{\n  \"nome\": \"Arthur B. Zanvetor\", // opcional \n  \"email\": \"novoemail@exemplo.com\", // opcional\n  \"nomeUsuario\": \"novo_zanvetor\", // opcional\n  \"nomeTime\": \"Novo Time\", // opcional\n  \"senhaAntiga\": \"senha_segura_123\", // sempre obrigatorio\n  \"senhaNova\": \"nova_senha_321\" // opcional\n}\n*/",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{url}}/editarUsuario/becastal",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "editarUsuario",
-                "becastal"
-              ]
-            }
-          },
-          "response": []
-        }
-      ],
-      "description": "Contains update (PUT) requests for modifying existing data in the Maratona API. Covers user authentication (login), adding or removing a user from a team, and editing a user's profile information. These requests require a valid JWT token available via `{{token_jwt}}`."
-    },
-    {
-      "name": "Deletar",
-      "item": [
-        {
-          "name": "ExcluirUsuario",
+          "name": "Excluir time1",
           "request": {
             "method": "DELETE",
             "header": [],
+            "url": {
+              "raw": "{{url}}/excluirTime?nome=time1-renomeado",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirTime"
+              ],
+              "query": [
+                {
+                  "key": "nome",
+                  "value": "time1-renomeado"
+                }
+              ]
+            },
+            "description": "Os integrantes nao sao apagados, apenas ficam sem time."
+          },
+          "response": []
+        },
+        {
+          "name": "Login albert__ (capitao do time2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/auth/login",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senha\": \"456\"\n}\n\n/*\n\n{\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\" OU \"emailUsuario\" : \"zanvetor@email.com\"\n}\n*/",
+              "raw": "{\n    \"nomeUsuario\": \"albert__\",\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{url}}/excluirUsuario",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "excluirUsuario"
-              ]
-            }
+            "description": "Autentica como albert__ e guarda o JWT em {{token_jwt}}."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "DeletarTime",
+          "name": "Excluir time2",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -592,41 +1169,15 @@
           "response": []
         },
         {
-          "name": "loginUsuario",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Verifica se o login deu sucesso (Status 200)",
-                  "pm.test(\"Login realizado com sucesso\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "// Captura o corpo da resposta",
-                  "var resposta = pm.response.json();",
-                  "",
-                  "// Salva o token gerado na variável de ambiente do Postman",
-                  "pm.environment.set(\"token_jwt\", resposta.token);"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
+          "name": "Login arthurb.zanvetor",
           "request": {
             "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nomeUsuario\": \"alexandre.dpierri\",\n  \"senha\": \"123\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
-            },
+            ],
             "url": {
               "raw": "{{url}}/auth/login",
               "host": [
@@ -636,72 +1187,77 @@
                 "auth",
                 "login"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "ExcluirUsuario",
-          "request": {
-            "method": "DELETE",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nomeUsuario\": \"alexandre.dpierri\",\n    \"senha\": \"123\"\n}\n\n/*\n\n{\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\" OU \"emailUsuario\" : \"zanvetor@email.com\"\n}\n*/",
+              "raw": "{\n    \"nomeUsuario\": \"arthurb.zanvetor\",\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{url}}/excluirUsuario",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "excluirUsuario"
-              ]
-            }
+            "description": "Autentica como arthurb.zanvetor e guarda o JWT em {{token_jwt}}."
           },
-          "response": []
-        },
-        {
-          "name": "loginUsuario",
+          "response": [],
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "// Verifica se o login deu sucesso (Status 200)",
-                  "pm.test(\"Login realizado com sucesso\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "// Captura o corpo da resposta",
-                  "var resposta = pm.response.json();",
-                  "",
-                  "// Salva o token gerado na variável de ambiente do Postman",
-                  "pm.environment.set(\"token_jwt\", resposta.token);"
-                ],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Excluir arthurb.zanvetor",
           "request": {
-            "method": "POST",
-            "header": [],
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/excluirUsuario/arthurb.zanvetor/nomeUsuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirUsuario",
+                "arthurb.zanvetor",
+                "nomeUsuario"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nomeUsuario\": \"albert__\",\n  \"senha\": \"123\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n",
+              "raw": "{\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login alexandre.dpierri",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/auth/login",
               "host": [
@@ -711,72 +1267,77 @@
                 "auth",
                 "login"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "ExcluirUsuario",
-          "request": {
-            "method": "DELETE",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nomeUsuario\": \"albert__\",\n    \"senha\": \"123\"\n}\n\n/*\n\n{\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\" OU \"emailUsuario\" : \"zanvetor@email.com\"\n}\n*/",
+              "raw": "{\n    \"nomeUsuario\": \"alexandre.dpierri\",\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{url}}/excluirUsuario",
-              "host": [
-                "{{url}}"
-              ],
-              "path": [
-                "excluirUsuario"
-              ]
-            }
+            "description": "Autentica como alexandre.dpierri e guarda o JWT em {{token_jwt}}."
           },
-          "response": []
-        },
-        {
-          "name": "loginUsuario Copy",
+          "response": [],
           "event": [
             {
               "listen": "test",
               "script": {
-                "exec": [
-                  "// Verifica se o login deu sucesso (Status 200)",
-                  "pm.test(\"Login realizado com sucesso\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "// Captura o corpo da resposta",
-                  "var resposta = pm.response.json();",
-                  "",
-                  "// Salva o token gerado na variável de ambiente do Postman",
-                  "pm.environment.set(\"token_jwt\", resposta.token);"
-                ],
                 "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
               }
             }
-          ],
+          ]
+        },
+        {
+          "name": "Excluir alexandre.dpierri",
           "request": {
-            "method": "POST",
-            "header": [],
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/excluirUsuario/alexandre.dpierri/nomeUsuario",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirUsuario",
+                "alexandre.dpierri",
+                "nomeUsuario"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nomeUsuario\": \"becastal\",\n  \"senha\": \"123\"\n}\n\n// alexandre.dpierri\n// becastal\n// albert__\n// gabrielSaa\n// arthurb.zanvetor\n",
+              "raw": "{\n    \"senhaAtual\": \"123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            },
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login becastal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{url}}/auth/login",
               "host": [
@@ -786,95 +1347,151 @@
                 "auth",
                 "login"
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "ExcluirUsuario Copy",
-          "request": {
-            "method": "DELETE",
-            "header": [],
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nomeUsuario\": \"becastal\",\n    \"senha\": \"123\"\n}\n\n/*\n\n{\n  \"senha\": \"senha_segura_123\",\n  \"nomeUsuario\": \"zanvetor\" OU \"emailUsuario\" : \"zanvetor@email.com\"\n}\n*/",
+              "raw": "{\n    \"nomeUsuario\": \"becastal\",\n    \"senhaAtual\": \"456\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
+            "description": "Autentica como becastal e guarda o JWT em {{token_jwt}}."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir becastal",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "{{url}}/excluirUsuario",
+              "raw": "{{url}}/excluirUsuario/becastal/nomeUsuario",
               "host": [
                 "{{url}}"
               ],
               "path": [
-                "excluirUsuario"
+                "excluirUsuario",
+                "becastal",
+                "nomeUsuario"
               ]
-            }
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"senhaAtual\": \"456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Senha 456 porque a pasta de Edicao trocou."
           },
           "response": []
         },
         {
-          "name": "DeletarTime",
+          "name": "Login albert__",
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "{{url}}/excluirTime?nome=time1",
+              "raw": "{{url}}/auth/login",
               "host": [
                 "{{url}}"
               ],
               "path": [
-                "excluirTime"
-              ],
-              "query": [
-                {
-                  "key": "nome",
-                  "value": "time1"
-                }
+                "auth",
+                "login"
               ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nomeUsuario\": \"albert__\",\n    \"senhaAtual\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Autentica como albert__ e guarda o JWT em {{token_jwt}}."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// /auth/login e a troca de nomeUsuario devolvem { token, tipo }.",
+                  "// O token vai pro ambiente e a auth Bearer da colecao usa {{token_jwt}}.",
+                  "const corpo = pm.response.json();",
+                  "pm.environment.set(\"token_jwt\", corpo.token);"
+                ]
+              }
             }
+          ]
+        },
+        {
+          "name": "Excluir albert__",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{url}}/excluirUsuario/albert__/email",
+              "host": [
+                "{{url}}"
+              ],
+              "path": [
+                "excluirUsuario",
+                "albert__",
+                "email"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"albertini@email.com\",\n    \"senhaAtual\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Variante por email. O email do corpo precisa ser o da conta no path."
           },
           "response": []
         }
       ],
-      "description": "Contains deletion requests for removing entities from the Maratona API. Includes `DELETE /excluirUsuario` to remove a user and `DELETE /excluirTime` to delete a team by name. Use with caution, as these operations are irreversible."
-    }
-  ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token_jwt}}",
-        "type": "string"
-      }
-    ]
-  },
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
+      "description": "Devolve o ambiente ao estado inicial, o que deixa a colecao repetivel: sem isso a segunda execucao falharia com 'usuario ja cadastrado'.\n\nA ordem importa. Os times saem primeiro porque quem e capitao nao consegue excluir a propria conta. Os problemas ficam no Mongo de proposito -- eles sao cache do Codeforces e servem as proximas execucoes."
     }
   ]
 }
