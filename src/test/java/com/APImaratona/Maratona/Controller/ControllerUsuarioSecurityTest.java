@@ -1,6 +1,7 @@
 package com.APImaratona.Maratona.Controller;
 
 import com.APImaratona.Maratona.Configuracao.SecurityConfig;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequest;
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationEntryPoint;
 import com.APImaratona.Maratona.Seguranca.JwtService;
 import com.APImaratona.Maratona.Services.CodeforcesService;
@@ -19,21 +20,22 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 /**
- * Ao contrario de ControllerUsuarioTest (addFilters=false + JwtService mockado, focado no
- * contrato do controller/service), esta classe roda com a cadeia de seguranca REAL
- * (SecurityConfig, JwtAuthenticationFilter, JwtAuthenticationEntryPoint, JwtService de
- * verdade) para cobrir o que so existe no filtro: requisicao sem token, com token invalido,
- * e com token valido de verdade emitido pelo proprio JwtService -- sem precisar de nenhum
- * banco real, so de um jwt.secret de teste via @TestPropertySource.
+ * Ao contrario dos demais testes de controller (addFilters=false + JwtService mockado, focados
+ * no contrato controller/service), esta classe roda com a cadeia de seguranca REAL
+ * (SecurityConfig, JwtAuthenticationFilter, JwtAuthenticationEntryPoint, JwtService de verdade)
+ * para cobrir o que so existe no filtro: requisicao sem token, com token invalido e com token
+ * valido emitido pelo proprio JwtService -- sem banco nenhum, so um jwt.secret de teste.
+ *
+ * O que os testes de /excluirUsuario protegem: o matcher do SecurityConfig precisa terminar em
+ * /** para casar com as rotas reais (/excluirUsuario/{nomeUsuario}/email). Sem isso a rota cai
+ * no anyRequest().permitAll() e nunca chega no JwtAuthenticationEntryPoint.
  */
 @WebMvcTest(ControllerUsuario.class)
 @Import({SecurityConfig.class, JwtService.class, JwtAuthenticationEntryPoint.class, TestCacheConfig.class})
@@ -58,12 +60,11 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/{nomeUsuario} sem header Authorization retorna 401")
+    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario}/nome sem header Authorization retorna 401")
     void editarUsuarioSemToken() throws Exception {
-        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
-        dto.setSenhaAntiga("senha123");
+        var dto = new UsuarioRequest.AlterarNome("Fulano Editado");
 
-        MvcResult resultado = chamar("Sem header Authorization", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Sem header Authorization", put("/editarUsuario/perfil/fulano/nome")
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
@@ -72,12 +73,11 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/{nomeUsuario} com token malformado retorna 401")
+    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario}/nome com token malformado retorna 401")
     void editarUsuarioTokenInvalido() throws Exception {
-        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
-        dto.setSenhaAntiga("senha123");
+        var dto = new UsuarioRequest.AlterarNome("Fulano Editado");
 
-        MvcResult resultado = chamar("Token malformado", put("/editarUsuario/fulano")
+        MvcResult resultado = chamar("Token malformado", put("/editarUsuario/perfil/fulano/nome")
                 .header("Authorization", "Bearer token-completamente-invalido")
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
@@ -86,36 +86,59 @@ class ControllerUsuarioSecurityTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("DELETE /excluirUsuario sem header Authorization retorna 401")
-    void excluirUsuarioSemToken() throws Exception {
-        ExcluirContaRequest dto = new ExcluirContaRequest();
-        dto.setNomeUsuario("fulano");
-        dto.setSenha("senha123");
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/email sem token retorna 401 no filtro")
+    void excluirUsuarioPorEmailSemToken() throws Exception {
+        var dto = new UsuarioRequest.ExcluirUsuarioEmail("fulano@teste.com", "senha123");
 
-        MvcResult resultado = chamar("Sem header Authorization", delete("/excluirUsuario")
+        MvcResult resultado = chamar("Sem header Authorization", delete("/excluirUsuario/fulano/email")
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Token JWT ausente, inválido ou expirado");
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario} com token valido de verdade passa pelo filtro e chega no controller")
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/nomeUsuario sem token retorna 401 no filtro")
+    void excluirUsuarioPorNomeUsuarioSemToken() throws Exception {
+        var dto = new UsuarioRequest.ExcluirUsuarioNomeUsuario("senha123");
+
+        MvcResult resultado = chamar("Sem header Authorization", delete("/excluirUsuario/fulano/nomeUsuario")
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Token JWT ausente, inválido ou expirado");
+    }
+
+    @Test
+    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario}/nome com token valido chega no controller")
     void editarUsuarioComTokenValido() throws Exception {
         String token = jwtService.gerarToken("fulano");
+        var dto = new UsuarioRequest.AlterarNome("Fulano Editado");
 
-        EditarPerfilRequest dto = new EditarPerfilRequest();
-        dto.setNomeNovo("Fulano Editado");
-
-        when(usuarioService.editarPerfil(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");
-
-        MvcResult resultado = chamar("Token valido emitido pelo JwtService real", put("/editarUsuario/perfil/fulano")
+        MvcResult resultado = chamar("Token valido emitido pelo JwtService real", put("/editarUsuario/perfil/fulano/nome")
                 .header("Authorization", "Bearer " + token)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        assertThat(resultado.getResponse().getContentAsString()).contains("Nome");
+        assertThat(resultado.getResponse().getContentAsString()).contains("nome alterado com sucesso");
+    }
+
+    @Test
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/email com token valido chega no controller")
+    void excluirUsuarioComTokenValido() throws Exception {
+        String token = jwtService.gerarToken("fulano");
+        var dto = new UsuarioRequest.ExcluirUsuarioEmail("fulano@teste.com", "senha123");
+
+        MvcResult resultado = chamar("Token valido emitido pelo JwtService real", delete("/excluirUsuario/fulano/email")
+                .header("Authorization", "Bearer " + token)
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("deletado com sucesso");
     }
 
     @Test

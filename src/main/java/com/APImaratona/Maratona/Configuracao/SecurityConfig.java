@@ -55,15 +55,18 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
             .authorizeHttpRequests(auth -> auth
-                    // por enquanto so essas duas rotas exigem token valido
+                    // Rotas que exigem token valido. Atencao ao /**: as rotas de usuario tem
+                    // segmentos depois do prefixo (ex: /excluirUsuario/{nomeUsuario}/email) e um
+                    // matcher sem /** NAO casa com elas -- cairiam no permitAll la embaixo e o
+                    // 401 so apareceria (ou nao) la dentro do service.
                     .requestMatchers(HttpMethod.PUT, "/editarUsuario/**").authenticated()
-                    .requestMatchers(HttpMethod.DELETE, "/excluirUsuario").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/excluirUsuario/**").authenticated()
                     .requestMatchers(HttpMethod.POST, "/cadastroTime").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/adicionarUsuario").authenticated()
                     .requestMatchers(HttpMethod.PUT, "/removerUsuario").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/excluirTime").authenticated()
-                    // tudo o mais (cadastro, listagens, times, problemas) continua aberto --
-                    // proteger o resto fica para uma proxima etapa, fora do escopo atual
+                    // tudo o mais (cadastro, login, listagens e consultas de problemas) continua
+                    // aberto -- proteger o resto fica para uma proxima etapa
                     .anyRequest().permitAll()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

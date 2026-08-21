@@ -126,25 +126,23 @@ public class UsuarioService {
 
         u = usuarioRepo.findByEmail(dto.email());
 
+        // A rota e /excluirUsuario/{nomeUsuario}/email: o email do corpo precisa apontar
+        // para a mesma conta do path, senao a mensagem de sucesso mentiria sobre quem saiu.
+        if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuario)){
+            throw new RegraDeNegocio("O email informado não pertence ao usuário " + nomeUsuario);
+        }
+
         // O token JWT prova quem esta chamando; so deixa excluir a propria conta,
         // mesmo que a senha informada por algum motivo bata com a de outra conta.
         if(!segHelperService.saoMesmoUsuario(u.getNomeUsuario(), nomeUsuarioAutenticado)){
             throw new AutenticacaoInvalidaException("Token não corresponde a este usuário");
         }
 
-        if(segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
-            if(u.getTime() != null) {
-                if(u.getTime().getCapitao() == u){
-                    throw new RegraDeNegocio("O usuário é capitão de um time, Time= " + u.getTime().getNome());
-                }
-                u.getTime().getUsuarios().remove(u);
-            }
-
-            usuarioNodeRepository.deleteById(u.getNomeUsuario());
-            usuarioRepo.delete(u);
-        }else{
+        if(!segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
             throw new RegraDeNegocio("Senha incorreta");
         }
+
+        excluirConta(u);
     }
 
     // Para atualizar o cache caso tenha excluido um usuario
@@ -166,18 +164,29 @@ public class UsuarioService {
         }
 
         if(!segHelperService.verificaSenha(u.getSenha(), dto.senhaAtual())){
-            if(u.getTime() != null) {
-                if(u.getTime().getCapitao() == u){
-                    throw new RegraDeNegocio("O usuário é capitão de um time, Time= " + u.getTime().getNome());
-                }
-                u.getTime().getUsuarios().remove(u);
-            }
-
-            usuarioNodeRepository.deleteById(u.getNomeUsuario());
-            usuarioRepo.delete(u);
-        }else{
             throw new RegraDeNegocio("Senha incorreta");
         }
+
+        excluirConta(u);
+    }
+
+    // Parte final comum das duas rotas de exclusao: solta o usuario do time (se houver) e
+    // remove das duas bases (Neo4j + Postgres). Ficar num lugar so evita que as duas rotas
+    // divirjam de novo -- foi exatamente assim que a condicao de senha ficou invertida aqui.
+    private void excluirConta(Usuario u){
+        if(u.getTime() != null) {
+            // Compara pelo nomeUsuario (unico) em vez de == : getCapitao() pode devolver
+            // outra instancia da mesma linha e a checagem passaria batido. O null e possivel
+            // em times gravados antes da coluna capitao existir (ddl-auto: update).
+            Usuario capitao = u.getTime().getCapitao();
+            if(capitao != null && segHelperService.saoMesmoUsuario(capitao.getNomeUsuario(), u.getNomeUsuario())){
+                throw new RegraDeNegocio("O usuário é capitão de um time, Time= " + u.getTime().getNome());
+            }
+            u.getTime().getUsuarios().remove(u);
+        }
+
+        usuarioNodeRepository.deleteById(u.getNomeUsuario());
+        usuarioRepo.delete(u);
     }
 
     @Caching(evict = {
@@ -237,12 +246,14 @@ public class UsuarioService {
         }
 
         String novoEmail = dto.emailNovo();
-        if(usuarioRepo.existsByEmail(novoEmail)) {
-            throw new RegraDeNegocio("Nome de usuário já em uso por outra pessoa");
-        }
-
+        // Checa "igual ao atual" antes de "em uso": senao trocar o email por ele mesmo
+        // cai no existsByEmail e devolve a mensagem errada.
         if(usuario.getEmail().equals(novoEmail)) {
             throw new RegraDeNegocio("O novo email deve ser diferente do antigo");
+        }
+
+        if(usuarioRepo.existsByEmail(novoEmail)) {
+            throw new RegraDeNegocio("Email já em uso por outra pessoa");
         }
 
         usuario.setEmail(novoEmail);
@@ -263,12 +274,14 @@ public class UsuarioService {
             throw new RegraDeNegocio("Senha incorreta");
         }
 
-        String novoSenha = dto.senhaNova();
-        if(usuario.getSenha().equals(novoSenha)) {
-            throw new RegraDeNegocio("A nova senha deve ser diferente do antigo");
+        String novaSenha = dto.senhaNova();
+        // getSenha() e um hash BCrypt: equals() contra a senha em texto puro nunca da true,
+        // entao a checagem so funciona passando pelo verificaSenha.
+        if(segHelperService.verificaSenha(usuario.getSenha(), novaSenha)) {
+            throw new RegraDeNegocio("A nova senha deve ser diferente da antiga");
         }
 
-        usuario.setSenha(segHelperService.encodarSenha(novoSenha));
+        usuario.setSenha(segHelperService.encodarSenha(novaSenha));
         usuarioRepo.save(usuario);
     }
 

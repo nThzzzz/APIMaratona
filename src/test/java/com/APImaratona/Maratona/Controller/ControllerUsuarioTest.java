@@ -1,11 +1,12 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Usuario.*;
+import com.APImaratona.Maratona.DTO.Usuario.LoginResponse;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequest;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
 import com.APImaratona.Maratona.Seguranca.JwtService;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.security.web.context.SecurityContextRepository;
 import com.APImaratona.Maratona.Services.CodeforcesService;
 import com.APImaratona.Maratona.Services.UsuarioService;
@@ -36,11 +37,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-@Disabled("Refatoração pesada rolando no TimeService")
+/**
+ * Slice do ControllerUsuario com o UsuarioService mockado: cobre o contrato HTTP (rota, corpo,
+ * status) e a traducao de excecao -> status feita pelo GlobalExceptionHandler.
+ *
+ * addFilters=false desliga a cadeia de seguranca, entao quem cobre "sem token = 401" e o
+ * ControllerUsuarioSecurityTest. Aqui o .principal(...) simula o usuario ja autenticado, o que
+ * permite testar o caso "token valido, mas de OUTRA conta" -> 401 vindo do service.
+ */
 @WebMvcTest(ControllerUsuario.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(TestCacheConfig.class)
 class ControllerUsuarioTest extends ApiControllerTestSupport {
+
+    private static final UsernamePasswordAuthenticationToken FULANO =
+            new UsernamePasswordAuthenticationToken("fulano", null);
+    private static final UsernamePasswordAuthenticationToken OUTRA_PESSOA =
+            new UsernamePasswordAuthenticationToken("outraPessoa", null);
 
     @MockitoBean
     private UsuarioService usuarioService;
@@ -49,7 +62,7 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     private CodeforcesService codeforcesService;
 
     // JwtAuthenticationFilter e um Filter (@Component) e por isso e escaneado pelo @WebMvcTest
-    // mesmo com addFilters=false; sem esse mock o contexto no sobe por falta de JwtService.
+    // mesmo com addFilters=false; sem esse mock o contexto nao sobe por falta de JwtService.
     @MockitoBean
     private JwtService jwtService;
 
@@ -60,6 +73,12 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     protected String nomeControlador() {
         return "ControllerUsuario";
     }
+
+    private UsuarioRequest.CadastrarUsuario cadastroValido() {
+        return new UsuarioRequest.CadastrarUsuario("Fulano", "fulano@teste.com", "senha123", "fulano", null);
+    }
+
+    // ------------------------------ Cadastro ------------------------------
 
     @Test
     @DisplayName("GET /teste responde 200 com texto fixo")
@@ -73,14 +92,12 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /cadastro com dados validos cadastra e dispara sync com Codeforces")
     void cadastroUsuarioSucesso() throws Exception {
-        CriarUsuarioRequest dto = new CriarUsuarioRequest("Fulano", "fulano@teste.com", "senha123", "fulano");
-
         doNothing().when(usuarioService).cadastrarUsuario(any());
         doNothing().when(codeforcesService).sincronizarPerfilCodeforces(anyString());
 
         MvcResult resultado = chamar("Cadastro com sucesso", post("/cadastro")
                 .contentType(APPLICATION_JSON)
-                .content(json(dto)));
+                .content(json(cadastroValido())));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
         assertThat(resultado.getResponse().getContentAsString()).isEqualTo("Usuario cadastrado com sucesso");
@@ -91,12 +108,11 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /cadastro com email ja cadastrado retorna 400")
     void cadastroUsuarioEmailDuplicado() throws Exception {
-        CriarUsuarioRequest dto = new CriarUsuarioRequest("Fulano", "fulano@teste.com", "senha123", "fulano");
         doThrow(new RegraDeNegocio("Usuário já cadastrado")).when(usuarioService).cadastrarUsuario(any());
 
         MvcResult resultado = chamar("Email ja cadastrado", post("/cadastro")
                 .contentType(APPLICATION_JSON)
-                .content(json(dto)));
+                .content(json(cadastroValido())));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
         assertThat(resultado.getResponse().getContentAsString()).contains("Usuário já cadastrado");
@@ -105,8 +121,7 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /cadastro com time inexistente retorna 404")
     void cadastroUsuarioTimeInexistente() throws Exception {
-        CriarUsuarioRequest dto = new CriarUsuarioRequest("Fulano", "fulano@teste.com", "senha123", "fulano");
-        dto.setNomeTime("TimeFantasma");
+        var dto = new UsuarioRequest.CadastrarUsuario("Fulano", "fulano@teste.com", "senha123", "fulano", "TimeFantasma");
         doThrow(new EntidadeNaoEcontrada("Time não encontrado")).when(usuarioService).cadastrarUsuario(any());
 
         MvcResult resultado = chamar("Time inexistente", post("/cadastro")
@@ -115,6 +130,21 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(404);
     }
+
+    @Test
+    @DisplayName("POST /cadastro com senha em branco e barrado pelo @Valid antes do service")
+    void cadastroUsuarioSenhaEmBranco() throws Exception {
+        var dto = new UsuarioRequest.CadastrarUsuario("Fulano", "fulano@teste.com", "  ", "fulano", null);
+
+        MvcResult resultado = chamar("Senha em branco", post("/cadastro")
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
+
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Senha nulo");
+    }
+
+    // ------------------------------ Consultas -----------------------------
 
     @Test
     @DisplayName("GET /listaUsuarios retorna a lista de usuarios cadastrados")
@@ -136,125 +166,119 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("GET /buscarUsuario?nomeUsuario= retorna o usuario correspondente")
+    @DisplayName("GET /buscarUsuario/{nomeUsuario} retorna o usuario correspondente")
     void buscarUsuarioPorNome() throws Exception {
         UsuarioResponse usuario = new UsuarioResponse();
         usuario.setNomeUsuario("fulano");
         when(usuarioService.buscarUsuarioNome("fulano")).thenReturn(usuario);
 
-        MvcResult resultado = chamar("Busca por nomeUsuario", get("/buscarUsuario").param("nomeUsuario", "fulano"));
+        MvcResult resultado = chamar("Busca por nomeUsuario", get("/buscarUsuario/fulano"));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("fulano");
     }
 
     @Test
-    @DisplayName("GET /buscarUsuario?email= retorna o usuario correspondente")
-    void buscarUsuarioPorEmail() throws Exception {
-        UsuarioResponse usuario = new UsuarioResponse();
-        usuario.setEmail("fulano@teste.com");
-        when(usuarioService.buscarUsuarioEmail("fulano@teste.com")).thenReturn(usuario);
-
-        MvcResult resultado = chamar("Busca por email", get("/buscarUsuario").param("email", "fulano@teste.com"));
-
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-    }
-
-    @Test
-    @DisplayName("GET /buscarUsuario sem parametros retorna 500 (RuntimeException nao mapeada)")
-    void buscarUsuarioSemParametros() throws Exception {
-        MvcResult resultado = chamar("Nenhum parametro informado", get("/buscarUsuario"));
-
-        assertThat(resultado.getResponse().getStatus()).isEqualTo(500);
-    }
-
-    @Test
-    @DisplayName("GET /buscarUsuario para usuario inexistente retorna 404")
+    @DisplayName("GET /buscarUsuario/{nomeUsuario} para usuario inexistente retorna 404")
     void buscarUsuarioInexistente() throws Exception {
         when(usuarioService.buscarUsuarioNome("fantasma")).thenThrow(new EntidadeNaoEcontrada("Usuario nao encontrado"));
 
-        MvcResult resultado = chamar("Usuario inexistente", get("/buscarUsuario").param("nomeUsuario", "fantasma"));
+        MvcResult resultado = chamar("Usuario inexistente", get("/buscarUsuario/fantasma"));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(404);
     }
 
+    // ------------------------------- Edicao -------------------------------
+
     @Test
-    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario} com sucesso retorna 200")
-    void editarUsuarioSucesso() throws Exception {
-        EditarPerfilRequest dto = new EditarPerfilRequest();
-        dto.setNomeNovo("Fulano Editado");
+    @DisplayName("PUT /editarUsuario/perfil/{nomeUsuario}/nome com sucesso retorna 200")
+    void editarPerfilNomeSucesso() throws Exception {
+        var dto = new UsuarioRequest.AlterarNome("Fulano Editado");
+        doNothing().when(usuarioService).editarPerfilNome(eq("fulano"), any(), eq("fulano"));
 
-        when(usuarioService.editarPerfil(eq("fulano"), any(), eq("fulano"))).thenReturn("| Nome |");
-
-        MvcResult resultado = chamar("Edicao de nome com sucesso (autenticado como fulano)", put("/editarUsuario/perfil/fulano")
-                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
+        MvcResult resultado = chamar("Edicao de nome (autenticado como fulano)", put("/editarUsuario/perfil/fulano/nome")
+                .principal(FULANO)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
-        assertThat(resultado.getResponse().getContentAsString()).contains("Nome");
+        assertThat(resultado.getResponse().getContentAsString()).contains("nome alterado com sucesso");
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario} com senha antiga incorreta retorna 400")
-    void editarUsuarioSenhaErrada() throws Exception {
-        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
-        dto.setSenhaAntiga("errada");
+    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario}/nomeUsuario devolve um token novo")
+    void editarNomeUsuarioDevolveTokenNovo() throws Exception {
+        var dto = new UsuarioRequest.AlterarNomeUsuario("fulano2", "senha123");
+        when(usuarioService.editarNomeUsuario(eq("fulano"), any(), eq("fulano")))
+                .thenReturn(new LoginResponse("token-novo-456", "Bearer"));
 
-        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("fulano"))).thenThrow(new RegraDeNegocio("Senha incorreta"));
+        MvcResult resultado = chamar("Troca de username emite token novo", put("/editarUsuario/credenciais/fulano/nomeUsuario")
+                .principal(FULANO)
+                .contentType(APPLICATION_JSON)
+                .content(json(dto)));
 
-        MvcResult resultado = chamar("Senha antiga incorreta (autenticado como fulano)", put("/editarUsuario/credenciais/fulano")
-                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
+        assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("token-novo-456", "Bearer");
+    }
+
+    @Test
+    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario}/senha com senha atual incorreta retorna 400")
+    void editarSenhaComSenhaAtualErrada() throws Exception {
+        var dto = new UsuarioRequest.AlterarSenha("errada", "senhaNova456");
+        doThrow(new RegraDeNegocio("Senha incorreta"))
+                .when(usuarioService).editarSenhaUsuario(eq("fulano"), any(), eq("fulano"));
+
+        MvcResult resultado = chamar("Senha atual incorreta", put("/editarUsuario/credenciais/fulano/senha")
+                .principal(FULANO)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(400);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Senha incorreta");
     }
 
     @Test
-    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario} com token de outro usuario retorna 401")
-    void editarUsuarioTokenNaoCorresponde() throws Exception {
-        EditarCredenciaisUsrNameRequest dto = new EditarCredenciaisUsrNameRequest();
-        dto.setSenhaAntiga("senha123");
+    @DisplayName("PUT /editarUsuario/credenciais/{nomeUsuario}/email com token de outro usuario retorna 401")
+    void editarEmailComTokenDeOutroUsuario() throws Exception {
+        var dto = new UsuarioRequest.AlterarEmail("novo@teste.com", "senha123");
+        doThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"))
+                .when(usuarioService).editarEmailUsuario(eq("fulano"), any(), eq("outraPessoa"));
 
-        when(usuarioService.editarUsuario(eq("fulano"), any(), eq("outraPessoa")))
-                .thenThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"));
-
-        MvcResult resultado = chamar("Token de outro usuario tentando editar fulano", put("/editarUsuario/credenciais/fulano")
-                .principal(new UsernamePasswordAuthenticationToken("outraPessoa", null))
+        MvcResult resultado = chamar("Token de outro usuario tentando editar fulano", put("/editarUsuario/credenciais/fulano/email")
+                .principal(OUTRA_PESSOA)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(401);
+        assertThat(resultado.getResponse().getContentAsString()).contains("Token não corresponde a este usuário");
     }
 
+    // ------------------------------ Exclusao ------------------------------
+
     @Test
-    @DisplayName("DELETE /excluirUsuario com sucesso retorna 200")
-    void excluirUsuarioSucesso() throws Exception {
-        ExcluirContaRequest dto = new ExcluirContaRequest();
-        dto.setNomeUsuario("fulano");
-        dto.setSenha("senha123");
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/nomeUsuario com sucesso retorna 200")
+    void excluirUsuarioPorNomeUsuarioSucesso() throws Exception {
+        var dto = new UsuarioRequest.ExcluirUsuarioNomeUsuario("senha123");
+        doNothing().when(usuarioService).excluirUsuarioNomeUsuario(eq("fulano"), any(), eq("fulano"));
 
-        doNothing().when(usuarioService).excluirUsuario(any(), eq("fulano"));
-
-        MvcResult resultado = chamar("Exclusao com sucesso (autenticado como fulano)", delete("/excluirUsuario")
-                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
+        MvcResult resultado = chamar("Exclusao com sucesso", delete("/excluirUsuario/fulano/nomeUsuario")
+                .principal(FULANO)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains("deletado com sucesso");
     }
 
     @Test
-    @DisplayName("DELETE /excluirUsuario com senha incorreta retorna 400")
-    void excluirUsuarioSenhaErrada() throws Exception {
-        ExcluirContaRequest dto = new ExcluirContaRequest();
-        dto.setNomeUsuario("fulano");
-        dto.setSenha("errada");
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/email com senha incorreta retorna 400")
+    void excluirUsuarioPorEmailSenhaErrada() throws Exception {
+        var dto = new UsuarioRequest.ExcluirUsuarioEmail("fulano@teste.com", "errada");
+        doThrow(new RegraDeNegocio("Senha incorreta"))
+                .when(usuarioService).excluirUsuarioEmail(eq("fulano"), any(), eq("fulano"));
 
-        doThrow(new RegraDeNegocio("Senha incorreta")).when(usuarioService).excluirUsuario(any(), eq("fulano"));
-
-        MvcResult resultado = chamar("Senha incorreta (autenticado como fulano)", delete("/excluirUsuario")
-                .principal(new UsernamePasswordAuthenticationToken("fulano", null))
+        MvcResult resultado = chamar("Senha incorreta", delete("/excluirUsuario/fulano/email")
+                .principal(FULANO)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 
@@ -262,17 +286,14 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
     }
 
     @Test
-    @DisplayName("DELETE /excluirUsuario com token de outro usuario retorna 401")
-    void excluirUsuarioTokenNaoCorresponde() throws Exception {
-        ExcluirContaRequest dto = new ExcluirContaRequest();
-        dto.setNomeUsuario("fulano");
-        dto.setSenha("senha123");
-
+    @DisplayName("DELETE /excluirUsuario/{nomeUsuario}/nomeUsuario com token de outro usuario retorna 401")
+    void excluirUsuarioComTokenDeOutroUsuario() throws Exception {
+        var dto = new UsuarioRequest.ExcluirUsuarioNomeUsuario("senha123");
         doThrow(new AutenticacaoInvalidaException("Token não corresponde a este usuário"))
-                .when(usuarioService).excluirUsuario(any(), eq("outraPessoa"));
+                .when(usuarioService).excluirUsuarioNomeUsuario(eq("fulano"), any(), eq("outraPessoa"));
 
-        MvcResult resultado = chamar("Token de outro usuario tentando excluir fulano", delete("/excluirUsuario")
-                .principal(new UsernamePasswordAuthenticationToken("outraPessoa", null))
+        MvcResult resultado = chamar("Token de outro usuario tentando excluir fulano", delete("/excluirUsuario/fulano/nomeUsuario")
+                .principal(OUTRA_PESSOA)
                 .contentType(APPLICATION_JSON)
                 .content(json(dto)));
 

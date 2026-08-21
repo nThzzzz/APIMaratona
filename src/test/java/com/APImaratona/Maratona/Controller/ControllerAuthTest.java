@@ -1,6 +1,7 @@
 package com.APImaratona.Maratona.Controller;
 
 import com.APImaratona.Maratona.DTO.Usuario.LoginResponse;
+import com.APImaratona.Maratona.DTO.Usuario.UsuarioRequest;
 import com.APImaratona.Maratona.Exceptions.AutenticacaoInvalidaException;
 import com.APImaratona.Maratona.Seguranca.JwtService;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -18,7 +19,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -31,7 +31,7 @@ class ControllerAuthTest extends ApiControllerTestSupport {
     private AuthService authService;
 
     // JwtAuthenticationFilter e um Filter (@Component) e por isso e escaneado pelo @WebMvcTest
-    // mesmo com addFilters=false; sem esse mock o contexto no sobe por falta de JwtService.
+    // mesmo com addFilters=false; sem esse mock o contexto nao sobe por falta de JwtService.
     @MockitoBean
     private JwtService jwtService;
 
@@ -46,7 +46,7 @@ class ControllerAuthTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /auth/login com credenciais validas retorna 200 com token")
     void loginSucesso() throws Exception {
-        LoginRequest dto = new LoginRequest("fulano", "senha123");
+        var dto = new UsuarioRequest.Login("fulano", "senha123");
         when(authService.login(any())).thenReturn(new LoginResponse("token-fake-123", "Bearer"));
 
         MvcResult resultado = chamar("Login com sucesso", post("/auth/login")
@@ -60,8 +60,8 @@ class ControllerAuthTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("POST /auth/login com credenciais invalidas retorna 401")
     void loginCredenciaisInvalidas() throws Exception {
-        LoginRequest dto = new LoginRequest("fulano", "senhaErrada");
-        doThrow(new AutenticacaoInvalidaException("Usuário ou senha inválidos")).when(authService).login(any());
+        var dto = new UsuarioRequest.Login("fulano", "senhaErrada");
+        when(authService.login(any())).thenThrow(new AutenticacaoInvalidaException("Usuário ou senha inválidos"));
 
         MvcResult resultado = chamar("Credenciais invalidas", post("/auth/login")
                 .contentType(APPLICATION_JSON)
