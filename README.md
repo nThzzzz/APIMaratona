@@ -50,7 +50,10 @@ Rodando fora do container, as variáveis exigidas no boot são `DATABASE_URL`, `
 
 ## 🏗️ Arquitetura e Destaques de Engenharia
 
-O projeto segue os princípios de **Clean Code** e a arquitetura em camadas padrão do Spring (Controller, Service, Repository, Model), com separação estrita de responsabilidades e aplicação prática do Princípio da Responsabilidade Única (SRP).
+O projeto segue a arquitetura em camadas padrão do Spring (Controller, Service, Repository, Model).
+
+> [!NOTE]
+> 🧭 **Por que as decisões foram tomadas assim?** As perguntas difíceis — por que quatro bancos, por que raspar HTML, o que acontece quando um store falha e o outro não — estão respondidas em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md), incluindo o que ainda é dívida técnica.
 
 ### ⚙️ Funcionalidades Avançadas:
 * **Sincronização com Codeforces:** Integração via `RestTemplate` para buscar submissões aprovadas em background (`@Async`), aliada a um **Web Scraper (Jsoup)** que extrai o texto original do problema diretamente do site.
