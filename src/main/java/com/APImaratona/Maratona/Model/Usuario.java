@@ -29,7 +29,6 @@ public class Usuario {
     private String rank;
     private int rating;
 
-    // N:1 varias pessoas pertencem a um time
     @ManyToOne
     @JoinColumn(name = "id_time")
     @JsonIgnore

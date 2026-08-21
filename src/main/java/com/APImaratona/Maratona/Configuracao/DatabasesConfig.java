@@ -26,14 +26,12 @@ import java.time.Duration;
 )
 public class DatabasesConfig {
 
-    // Gerenciador do Postgres (Principal)
     @Primary
     @Bean(name = "transactionManager")
     public JpaTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
 
-    // Gerenciador do Neo4j
     @Bean(name = "neo4jTransactionManager")
     public Neo4jTransactionManager neo4jTransactionManager(Driver driver) {
         return new Neo4jTransactionManager(driver);

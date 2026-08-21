@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-@Slf4j // Para usar o log.info em vez do print
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProblemasService {
@@ -44,7 +44,6 @@ public class ProblemasService {
         }
         log.info("Problema: {} relcionado com sucesso", idProblema);
 
-        // verifica se o problema ja existe
         if(problemaRepository.existsByIdProblema(idProblema)){
             log.info("Problema ja cadastrado: {} com as tags: {}", idProblema, tags);
             return;
@@ -160,7 +159,6 @@ public class ProblemasService {
             Element problemStatement = doc.selectFirst("div.problem-statement");
             Element titleElement = doc.selectFirst("div.header .title");
 
-            // Se a página for lida corretamente
             problema.setNome(titleElement != null ? titleElement.text() : submissao.getProblem().getName());
             problema.setDescricao(problemStatement != null ? problemStatement.outerHtml() : "<p>Texto indisponível</p>");
 

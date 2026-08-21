@@ -12,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-@Slf4j // Para usar o log.info em vez do print
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CodeforcesService {

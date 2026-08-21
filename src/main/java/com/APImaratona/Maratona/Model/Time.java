@@ -18,7 +18,8 @@ public class Time {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    // 1:N, um time tem muitos usuarios, se o time for excluido o usuario nao é
+    // Sem CascadeType.REMOVE de proposito: excluir o time nao apaga os usuarios,
+    // eles apenas ficam sem time.
     @OneToMany(mappedBy = "time", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Usuario> usuarios;
 

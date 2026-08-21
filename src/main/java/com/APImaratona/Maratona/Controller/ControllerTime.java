@@ -1,6 +1,5 @@
 package com.APImaratona.Maratona.Controller;
 
-import com.APImaratona.Maratona.DTO.Time.EditarTimeRequest;
 import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
 import com.APImaratona.Maratona.DTO.Time.TimeResponse;
 import com.APImaratona.Maratona.Services.TimeService;
@@ -43,12 +42,6 @@ public class ControllerTime {
         timeService.removerUsuarioNoTime(dto, authentication.getName());
         return "Usuario(s): " + dto.getNomesUsuarios() + " removido(s) com sucesso do Time: " + dto.getNomeTime();
     }
-
-//    @PutMapping("editarTime")
-//    public String editarTime(@RequestBody EditarTimeRequest dto, Authentication authentication){
-//        String resultado = timeService.editarTime(dto, authentication.getName());
-//        return "Usuario: " + dto.getNomeTimeAtual() + ", Modificacoes (" + resultado + ")";
-//    }
 
     @DeleteMapping("/excluirTime")
     public String excluirTime(@RequestParam String nome, Authentication authentication){

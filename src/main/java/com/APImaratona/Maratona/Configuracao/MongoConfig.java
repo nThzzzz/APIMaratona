@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @Configuration
 public class MongoConfig {
 
-    @Value("${spring.data.mongodb.uri}")   // Lê do application.yml
+    @Value("${spring.data.mongodb.uri}")
     private String mongoUri;
 
     @Bean

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    // Captura nossos erros de Regra de Negócio e transforma em 400 (BAD REQUEST)
     @ExceptionHandler(RegraDeNegocio.class)
     public ResponseEntity<ErrorResponseDTO> handleRegraNegocioException(RegraDeNegocio ex) {
         ErrorResponseDTO erro = new ErrorResponseDTO(
@@ -25,7 +24,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 
-    // Captura quando não achamos algo e transforma em 404 (NOT FOUND)
     @ExceptionHandler(EntidadeNaoEcontrada.class)
     public ResponseEntity<ErrorResponseDTO> handleEntidadeNaoEncontradaException(EntidadeNaoEcontrada ex) {
         ErrorResponseDTO erro = new ErrorResponseDTO(
@@ -54,7 +52,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 
-    // Captura falha de login ou token usado contra a conta errada, retorna 401 (UNAUTHORIZED)
     @ExceptionHandler(AutenticacaoInvalidaException.class)
     public ResponseEntity<ErrorResponseDTO> handleAutenticacaoInvalida(AutenticacaoInvalidaException ex) {
         ErrorResponseDTO erro = new ErrorResponseDTO(
@@ -66,7 +63,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
     }
 
-    // Captura qualquer outro erro que não prevemos.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleErroGenerico(Exception ex) {
         // As exceções do próprio Spring MVC (rota inexistente, método não suportado, media

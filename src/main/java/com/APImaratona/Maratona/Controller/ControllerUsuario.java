@@ -35,7 +35,6 @@ public class ControllerUsuario {
         return usuarioService.listarUsuarios();
     }
 
-    // RequestParam signifca que pode ser fornecido ou nao no caso de nada dispara uma exception
     @GetMapping("/buscarUsuario/{nomeUsuario}")
     public UsuarioResponse mostraUsuario(@PathVariable String nomeUsuario) {
         return usuarioService.buscarUsuarioNome(nomeUsuario);

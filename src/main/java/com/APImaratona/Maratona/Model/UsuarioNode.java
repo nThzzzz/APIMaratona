@@ -17,10 +17,11 @@ public class UsuarioNode {
     @Id
     private String nomeUsuario;
 
-    // Relacao de frente pra tras, OUTGOING
+    // Fora de equals/hashCode/toString: ProblemaNode aponta de volta para ca e percorrer
+    // os dois lados entraria em recursao infinita.
     @Relationship(type = "RESOLVEU", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude  // tipo o json ignore
-    @ToString.Exclude // tipo o json ignore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Set<ProblemaNode> problemasResolvidos = new HashSet<>();
 
 }

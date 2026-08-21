@@ -18,7 +18,7 @@ public class MaratonaApplication {
 		SpringApplication.run(MaratonaApplication.class, args);
 	}
 
-	@Bean // Para fazer requisições HTTP
+	@Bean
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
 	}

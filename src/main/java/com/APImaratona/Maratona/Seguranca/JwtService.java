@@ -28,16 +28,15 @@ public class JwtService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretBase64));
     }
 
-    // Gera um token novo para um usuario que acabou de logar com sucesso.
     public String gerarToken(String nomeUsuario) {
         Date agora = new Date();
         Date expira = new Date(agora.getTime() + expiracaoMs);
 
         return Jwts.builder()
-                .subject(nomeUsuario)      // "de quem" e esse token
+                .subject(nomeUsuario)
                 .issuedAt(agora)
                 .expiration(expira)
-                .signWith(chave())         // assina com a chave secreta -> ninguem consegue forjar
+                .signWith(chave())
                 .compact();
     }
 

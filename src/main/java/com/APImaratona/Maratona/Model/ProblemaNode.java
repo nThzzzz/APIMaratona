@@ -20,9 +20,10 @@ public class ProblemaNode {
     private int rating;
 
 
-    // Olha a relacao de tras pra frente ICOMING
+    // Fora de equals/hashCode/toString: UsuarioNode aponta de volta para ca e percorrer
+    // os dois lados entraria em recursao infinita.
     @Relationship(type = "RESOLVEU", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude  // tipo o json ignore
-    @ToString.Exclude // tipo o json ignore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Set<UsuarioNode> usuariosResolveram = new HashSet<>();
 }

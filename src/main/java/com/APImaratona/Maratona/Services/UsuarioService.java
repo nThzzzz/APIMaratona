@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor // pra nao usar o @Autwired, lombok faz
+@RequiredArgsConstructor
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepo;
@@ -36,14 +36,11 @@ public class UsuarioService {
             @CacheEvict(value = "cacheProblemasUsuario", key = "#dto.nomeUsuario")
     })
     public void cadastrarUsuario(UsuarioRequest.CadastrarUsuario dto){
-        // validacao e cadastros do usuario
-
         Usuario usuario = new Usuario();
 
-        // Fazer verificacao e tratamento
         usuario.setNome(dto.nome());
         usuario.setNomeUsuario(dto.nomeUsuario());
-        usuario.setSenha(segHelperService.encodarSenha(dto.senha()));; // nunca grava senha em texto puro
+        usuario.setSenha(segHelperService.encodarSenha(dto.senha())); // nunca grava senha em texto puro
         usuario.setEmail(dto.email());
 
         if(usuarioRepo.existsByEmail(dto.email())){
@@ -53,8 +50,6 @@ public class UsuarioService {
         if(usuarioRepo.existsByNomeUsuario(dto.nomeUsuario())){
             throw new RegraDeNegocio("Nome de Usuário já cadastrado");
         }
-
-        // validadcao do time
 
         Time time = new Time();
         if (dto.nomeTime() != null && !dto.nomeTime().isBlank()) {

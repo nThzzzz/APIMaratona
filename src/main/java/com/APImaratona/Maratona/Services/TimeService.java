@@ -1,6 +1,5 @@
 package com.APImaratona.Maratona.Services;
 
-import com.APImaratona.Maratona.DTO.Time.EditarTimeRequest;
 import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
 import com.APImaratona.Maratona.DTO.Time.TimeResponse;
 import com.APImaratona.Maratona.DTO.Usuario.UsuarioResponse;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +25,6 @@ public class TimeService {
     private final SegHelperService segHelperService;
 
     public void cadastrarTime(CriarTimeRequest dto, String nomeUsuarioCapitao){
-        // Fazer verificacao e tratamento
-
         Time time = new Time();
 
         if(dto.getNomeTime()==null){
@@ -213,27 +209,4 @@ public class TimeService {
             usuarioRepo.save(usuario);
         }
     }
-
-
-
-//    public String editarTime(EditarTimeRequest dto, String nomeCapitao){
-//        String resultado = "";
-//
-//        if(nomeCapitao == null){
-//            throw new RegraDeNegocio("Parametro nomeCapitao NULL");
-//        }
-//
-//        if(dto == null){
-//            throw  new RegraDeNegocio("Parametro dto nulo");
-//        }
-//
-//        if(Objects.equals(dto.getNomeTimeAtual(), dto.getNomeTimeNovo()) && Objects.equals(dto.getNomeCapitaoAtual(), dto.getNomeTimeNovo())){
-//            throw new RegraDeNegocio("Nenhuma alteração a ser feita");
-//        }
-//
-//        if(dto.ca)
-//
-//
-//        return resultado;
-//    }
 }

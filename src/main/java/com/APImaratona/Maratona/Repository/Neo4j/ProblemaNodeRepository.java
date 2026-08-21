@@ -7,10 +7,6 @@ import org.springframework.data.neo4j.repository.query.Query;
 import java.util.List;
 
 public interface ProblemaNodeRepository extends Neo4jRepository<ProblemaNode, String> {
-    // Nao precisa dessa query pq ja é mapeada a relacao inversa no node
-    // @Query("MATCH (u:UsuarioGrafo)-[:RESOLVEU]->(p:ProblemaGrafo {idCodeforces: $idProblema}) RETURN u")
-    // List<UsuarioNode> encontrarUsuariosQueResolveram(String idProblema);
-
     // Para quem já tem histórico
     @Query("MATCH (eu:Usuario {nomeUsuario: $nomeUsuario})-[:RESOLVEU]->(pComum:Problema)<-[:RESOLVEU]-(outro:Usuario)-[:RESOLVEU]->(pRecomendado:Problema) " +
             "WHERE NOT (eu)-[:RESOLVEU]->(pRecomendado) " +
