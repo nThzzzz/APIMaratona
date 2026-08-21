@@ -51,7 +51,8 @@ A API usa **Spring Security + JWT** (stateless, sem sessão/cookie) para protege
 * **Uso do token:** envie o header `Authorization: Bearer <token>` nas rotas protegidas. Um filtro (`JwtAuthenticationFilter`) valida o token em toda requisição; se estiver ausente, inválido ou expirado, a rota protegida responde `401` com um corpo JSON padronizado (`JwtAuthenticationEntryPoint`).
 * **Dono do recurso:** o `nomeUsuario` contido no token precisa ser o mesmo da conta alvo da operação — token válido de outro usuário também resulta em `401`.
 * **Senhas (Sudo Mode):** Senhas são armazenadas com hash **BCrypt**. Para operações altamente sensíveis (como alterar e-mail, senha ou excluir a conta), o sistema exige a validação da senha atual no corpo da requisição, mesmo com o token JWT válido.
-* **Escopo atual (deliberadamente reduzido):** por enquanto, as rotas de edição de usuário (`PUT /editarUsuario/**`) e exclusão (`DELETE /excluirUsuario`) (marcadas com 🔒 abaixo) exigem token. O restante da API permanece público.
+* **Capitão do time:** times têm um capitão (definido no cadastro). Só ele pode adicionar membros, remover membros ou excluir o time — e, enquanto for capitão, não consegue excluir a própria conta.
+* **Escopo atual (deliberadamente reduzido):** exigem token as rotas de edição (`PUT /editarUsuario/**`) e exclusão (`DELETE /excluirUsuario/**`) de usuário, mais as rotas de escrita de time (`POST /cadastroTime`, `PUT /adicionarUsuario`, `PUT /removerUsuario`, `DELETE /excluirTime`) — todas marcadas com 🔒 abaixo. O restante da API (cadastro, login, listagens e consultas de problemas) permanece público.
 
 ---
 
@@ -71,7 +72,7 @@ Gerencia o cadastro, edição de perfil/credenciais e exclusão de competidores.
 | :---   |:-----------------------------------------------------| :--- |
 | `POST` | `/cadastro`                                          | Cadastra um usuário e dispara a sync do Codeforces. |
 | `GET`  | `/listaUsuarios`                                     | Retorna todos os usuários (sem expor senhas). |
-| `GET`  | `/buscarUsuario`                                     | Busca um usuário (Query: `?nomeUsuario=` ou `?email=`). |
+| `GET`  | `/buscarUsuario/{nomeUsuario}`                       | Busca um usuário pelo nome de usuário. |
 | `PUT`  | `/editarUsuario/perfil/{nomeUsuario}/nome`           | 🔒 Altera apenas o nome de exibição. Exige token JWT válido. |
 | `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/email`     | 🔒 Altera o e-mail da conta. Exige token JWT e a `senhaAtual`. |
 | `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/senha`     | 🔒 Altera a senha da conta. Exige token JWT e a `senhaAtual`. |
@@ -84,12 +85,12 @@ Gerencia os times (limitados a 3 integrantes) e a entrada/saída de membros.
 
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| `POST` | `/cadastroTime` | Cadastra um time e (opcionalmente) seus membros. |
+| `POST` | `/cadastroTime` | 🔒 Cadastra um time e (opcionalmente) seus membros. Quem cria vira o capitão e precisa estar na lista de membros. |
 | `GET` | `/listarTimes` | Lista todos os times e seus membros. |
 | `GET` | `/buscarTime` | Busca um time específico (Query: `?nome=`). |
-| `PUT` | `/adicionarUsuario` | Adiciona usuários a um time existente. |
-| `PUT` | `/removerUsuario` | Remove usuários específicos de um time. |
-| `DELETE` | `/excluirTime` | Exclui o time (usuários ficam "Sem time"). |
+| `PUT` | `/adicionarUsuario` | 🔒 Adiciona usuários a um time existente. Só o capitão. |
+| `PUT` | `/removerUsuario` | 🔒 Remove usuários específicos de um time. Só o capitão. |
+| `DELETE` | `/excluirTime` | 🔒 Exclui o time (usuários ficam "Sem time"). Só o capitão. |
 
 ### 🧩 Problemas e Recomendações (`/`)
 Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
@@ -107,9 +108,10 @@ Consulta os problemas resolvidos e cruza dados entre Mongo, Neo4j e Redis.
 
 ## 🧪 Testes
 
-A suíte é pensada para rodar **sem depender de infraestrutura real** (Postgres/Mongo/Neo4j/Redis) no dia a dia:
+A suíte tem **59 testes** e é pensada para rodar **sem depender de infraestrutura real** (Postgres/Mongo/Neo4j/Redis) no dia a dia:
 
 * **Testes de controller** (`@WebMvcTest`, services mockados com Mockito) cobrem o contrato HTTP de cada controller. Em especial, `ControllerUsuarioSecurityTest` sobe a cadeia **real** do Spring Security (`SecurityConfig` + `JwtAuthenticationFilter` + `JwtService`) para validar `401` sem token, `401` com token inválido e `200` com um token válido de verdade — usando um `jwt.secret` de teste via `@TestPropertySource`, sem tocar em nenhum banco.
+* **`UsuarioServiceSegurancaTest`** é um teste unitário puro das checagens de senha do `UsuarioService`, usando `SegHelperService`/**BCrypt reais** (mockar o encoder esconderia justamente o tipo de bug que ele trava: comparar hash com texto puro, ou inverter a condição de senha correta).
 * **`JwtServiceTest`** é um teste unitário puro (sem contexto Spring) da geração/validação do token: caminho feliz, token malformado, expirado e assinado com outro segredo.
 * **`MaratonaApplicationTests`** (`contextLoads`) sobe o contexto completo da aplicação e por isso exige Postgres/Mongo/Neo4j/Redis e um `JWT_SECRET` reais. É marcado com `@Tag("integration")` e fica de fora do `./mvnw test` padrão.
 
