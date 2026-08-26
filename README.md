@@ -1,12 +1,12 @@
 # 🏆 API Maratona (Codeforces Integration)
 
-![GitHub repo size](https://img.shields.io/github/repo-size/nThzzzz/APImaratona?style=for-the-badge)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/nThzzzz/APImaratona?style=for-the-badge)
-![GitHub top language](https://img.shields.io/github/languages/top/nThzzzz/APImaratona?style=for-the-badge)
-![GitHub license](https://img.shields.io/github/license/nThzzzz/APImaratona?style=for-the-badge)
-![GitHub contributors](https://img.shields.io/github/contributors/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/nThzzzz/API-Maratona?style=for-the-badge)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/nThzzzz/API-Maratona?style=for-the-badge)
+![GitHub top language](https://img.shields.io/github/languages/top/nThzzzz/API-Maratona?style=for-the-badge)
+![GitHub license](https://img.shields.io/github/license/nThzzzz/API-Maratona?style=for-the-badge)
+![GitHub contributors](https://img.shields.io/github/contributors/nThzzzz/API-Maratona?style=for-the-badge)
 
-![GitHub last commit](https://img.shields.io/github/last-commit/nThzzzz/APImaratona?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/nThzzzz/API-Maratona?style=for-the-badge)
 
 
 API em Java e Spring Boot para gerenciar competidores e times de maratona de programação, integrada ao Codeforces. Cada usuário é um handle real, e o sistema puxa o perfil dele e os problemas que resolveu para montar recomendações.
