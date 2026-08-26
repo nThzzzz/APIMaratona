@@ -54,7 +54,11 @@ services:
       retries: 20
 
   api:
-    build: .
+    # Contexto e a raiz do repo (onde estao mvnw, pom.xml e src/), nao esta
+    # pasta -- so o Dockerfile mora aqui dentro.
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
     ports:
       - "8080:8080"
     environment:

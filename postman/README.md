@@ -11,12 +11,12 @@ Esta coleção percorre o ciclo de vida completo da API Maratona contra um ambie
 Na raiz do repositório:
 
 ```bash
-docker compose up --build --wait
+docker compose -f Docker/docker-compose.yml up --build --wait
 ```
 
 Isso levanta os quatro bancos e a API já configurada, e só devolve o terminal quando tudo estiver saudável (o `--wait` depende dos *healthchecks* declarados no compose). A API responde em `http://localhost:8080`. Se o seu Docker não reconhecer `docker compose`, use `docker-compose` com hífen.
 
-Se preferir rodar a aplicação fora do container, as variáveis de ambiente necessárias estão no [`docker-compose.yml`](../docker-compose.yml). São nove, e a aplicação não sobe sem elas.
+Se preferir rodar a aplicação fora do container, as variáveis de ambiente necessárias estão no [`docker-compose.yml`](../Docker/docker-compose.yml). São nove, e a aplicação não sobe sem elas.
 
 ## 2. Instale o Newman
 

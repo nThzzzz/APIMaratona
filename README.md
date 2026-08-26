@@ -34,16 +34,16 @@ O ponto do projeto é persistência poliglota de verdade: PostgreSQL, MongoDB, N
 A aplicação depende de quatro bancos e de nove variáveis de ambiente, então o caminho mais curto é o Docker:
 
 ```bash
-docker compose up --build --wait
+docker compose -f Docker/docker-compose.yml up --build --wait
 ```
 
 Isso levanta PostgreSQL, MongoDB, Neo4j, Redis e a API já configurada, e só devolve o terminal quando tudo estiver saudável. A API sobe em `http://localhost:8080` e o estado dos bancos aparece em `/actuator/health`.
 
-Para derrubar e apagar os dados: `docker compose down -v`.
+Para derrubar e apagar os dados: `docker compose -f Docker/docker-compose.yml down -v`.
 
 > Se o seu Docker não reconhecer `docker compose` (o plugin v2), use `docker-compose` com hífen. Os comandos são iguais.
 
-> As credenciais no [`docker-compose.yml`](docker-compose.yml) são fixas e servem para desenvolvimento. Para qualquer outro uso, gere seu próprio `JWT_SECRET` (`openssl rand -base64 32`) e troque as senhas dos bancos.
+> As credenciais no [`docker-compose.yml`](Docker/docker-compose.yml) são fixas e servem para desenvolvimento. Para qualquer outro uso, gere seu próprio `JWT_SECRET` (`openssl rand -base64 32`) e troque as senhas dos bancos.
 
 Rodando fora do container, as variáveis exigidas no boot são `DATABASE_URL`, `DATABASE_USUARIO`, `DATABASE_SENHA`, `MONGO_URI`, `REDIS_URL`, `NEO4J_URI`, `NEO4J_USUARIO`, `NEO4J_SENHA` e `JWT_SECRET`. A aplicação não inicia sem elas.
 
