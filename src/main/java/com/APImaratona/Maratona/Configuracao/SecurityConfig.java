@@ -3,11 +3,18 @@ package com.APImaratona.Maratona.Configuracao;
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationEntryPoint;
 import com.APImaratona.Maratona.Seguranca.JwtAuthenticationFilter;
 import com.APImaratona.Maratona.Seguranca.RateLimitFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -61,9 +68,32 @@ public class SecurityConfig {
         return new RequestAttributeSecurityContextRepository();
     }
 
+    // Sem isto o navegador barra qualquer chamada de um front hospedado em outra origem: a
+    // requisicao ate chega na API, mas a resposta e descartada por falta do cabecalho, e o
+    // preflight OPTIONS nem passa pelo deny by default abaixo. As origens sao configuraveis
+    // porque o endereco do front muda entre dev e deploy; o padrao e o Vite local.
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${cors.origens:http://localhost:5173}") List<String> origens) {
+
+        CorsConfiguration configuracao = new CorsConfiguration();
+        configuracao.setAllowedOrigins(origens);
+        configuracao.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuracao.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Sem credenciais: a sessao e o proprio token no header, nao ha cookie a compartilhar.
+        configuracao.setAllowCredentials(false);
+        configuracao.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource fonte = new UrlBasedCorsConfigurationSource();
+        fonte.registerCorsConfiguration("/**", configuracao);
+
+        return fonte;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
         http
+            .cors(Customizer.withDefaults()) // usa o corsConfigurationSource acima
             .csrf(AbstractHttpConfigurer::disable) // API stateless com token, sem cookie/sessao de browser
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .securityContext(sc -> sc.securityContextRepository(securityContextRepository))

@@ -39,6 +39,14 @@ public class ControllerUsuario {
         return usuarioService.buscarUsuarioNome(nomeUsuario);
     }
 
+    // Quem e o dono do token. Sem isto o cliente precisa decodificar o JWT so para
+    // descobrir o proprio nome de usuario e so entao chamar /buscarUsuario -- ou seja,
+    // fica acoplado ao formato do token para uma informacao que a API ja tem.
+    @GetMapping("/me")
+    public UsuarioResponse meuPerfil(Authentication authentication) {
+        return usuarioService.buscarUsuarioNome(authentication.getName());
+    }
+
     // "Authentication authentication" e resolvido automaticamente pelo Spring a partir
     // do token JWT validado no JwtAuthenticationFilter -- nao precisa de anotacao extra.
     @PutMapping("/editarUsuario/credenciais/{nomeUsuario}/nomeUsuario")
