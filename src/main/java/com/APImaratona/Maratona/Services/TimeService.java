@@ -80,6 +80,11 @@ public class TimeService {
     private TimeResponse paraResponse(Time time){
         TimeResponse timeDTO = new TimeResponse();
         timeDTO.setNomeTime(time.getNome());
+
+        // Mesmo cuidado do buscarTimeDoCapitao: getCapitao() pode ser null em time gravado
+        // antes da coluna existir, e ali o acesso direto estourava NPE.
+        timeDTO.setNomeCapitao(time.getCapitao() != null ? time.getCapitao().getNomeUsuario() : null);
+
         timeDTO.setUsuarios(new ArrayList<>());
 
         for(Usuario u : time.getUsuarios()){
@@ -147,6 +152,16 @@ public class TimeService {
         }
 
         for(String nome : dto.getNomesUsuarios()){
+            // Antes da busca no banco de proposito: quem chama ja foi provado capitao pelo
+            // buscarTimeDoCapitao, entao existe. O capitao sair sem passar a capitania
+            // deixava capitao_id apontando para quem nao e mais integrante, e as escritas
+            // seguiam passando no buscarTimeDoCapitao. Mesma logica do excluirConta, que
+            // ja barra o capitao de apagar a propria conta.
+            if(segHelperService.saoMesmoUsuario(nome, nomeUsuarioCapitao)){
+                throw new RegraDeNegocio("O capitão não pode sair do time, Time= " + time.getNome() +
+                        ". Transfira a capitania antes");
+            }
+
             if(!usuarioRepo.existsByNomeUsuario(nome)){
                 throw new EntidadeNaoEcontrada("Nome de usuario: " + nome + ", nao econtrado");
             }

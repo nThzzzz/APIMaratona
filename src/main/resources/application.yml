@@ -34,6 +34,11 @@ jwt:
   secret: ${JWT_SECRET}
   expiracao-ms: 3600000 # 1 hora
 
+# Origens do front autorizadas a chamar a API pelo navegador. Lista separada por virgula.
+# O padrao e o Vite local; em deploy, apontar para o dominio do front.
+cors:
+  origens: ${CORS_ORIGENS:http://localhost:5173}
+
 # Requisicoes por IP, por janela, nas duas rotas publicas de escrita.
 # Contador em memoria: ver a limitacao descrita no RateLimitFilter.
 rate-limit:

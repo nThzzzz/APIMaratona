@@ -99,24 +99,28 @@ class ControllerTimeTest extends ApiControllerTestSupport {
     @Test
     @DisplayName("GET /listarTimes retorna a lista de times")
     void listarTimes() throws Exception {
-        TimeResponse time = new TimeResponse("Timaco", List.of());
+        TimeResponse time = new TimeResponse("Timaco", CAPITAO.getName(), List.of());
         when(timeService.listarTimes(any())).thenReturn(new PageImpl<>(List.of(time)));
 
         MvcResult resultado = chamar("Lista com um time", get("/listarTimes"));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
         assertThat(resultado.getResponse().getContentAsString()).contains("Timaco");
+        // O cliente decide o que mostrar a partir de quem e o capitao, entao o campo
+        // precisa chegar na listagem, nao so no buscarTime.
+        assertThat(resultado.getResponse().getContentAsString()).contains("nomeCapitao");
     }
 
     @Test
     @DisplayName("GET /buscarTime retorna o time buscado")
     void buscarTimeSucesso() throws Exception {
-        TimeResponse time = new TimeResponse("Timaco", List.of());
+        TimeResponse time = new TimeResponse("Timaco", CAPITAO.getName(), List.of());
         when(timeService.buscarTime("Timaco")).thenReturn(time);
 
         MvcResult resultado = chamar("Busca por nome existente", get("/buscarTime").param("nome", "Timaco"));
 
         assertThat(resultado.getResponse().getStatus()).isEqualTo(200);
+        assertThat(resultado.getResponse().getContentAsString()).contains(CAPITAO.getName());
     }
 
     @Test

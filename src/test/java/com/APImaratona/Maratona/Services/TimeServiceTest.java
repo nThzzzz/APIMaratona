@@ -1,5 +1,6 @@
 package com.APImaratona.Maratona.Services;
 
+import com.APImaratona.Maratona.DTO.Time.CriarTimeRequest;
 import com.APImaratona.Maratona.DTO.Time.TimeRequest;
 import com.APImaratona.Maratona.Exceptions.EntidadeNaoEcontrada;
 import com.APImaratona.Maratona.Exceptions.RegraDeNegocio;
@@ -11,6 +12,8 @@ import com.APImaratona.Maratona.Seguranca.SegHelperService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -182,5 +185,60 @@ class TimeServiceTest {
                 .hasMessageContaining("não é o capitão");
 
         assertThat(time.getCapitao().getNomeUsuario()).isEqualTo("fulano");
+    }
+
+    // --------------------------- Remover ----------------------------
+
+    @Test
+    @DisplayName("removerUsuarioNoTime recusa o capitao removendo a si mesmo")
+    void capitaoNaoPodeSair() {
+        Time time = timeComCapitao();
+
+        assertThatThrownBy(() -> timeService.removerUsuarioNoTime(
+                new CriarTimeRequest("Timaco", List.of("fulano")), "fulano"))
+                .isInstanceOf(RegraDeNegocio.class)
+                .hasMessageContaining("O capitão não pode sair do time");
+
+        // O time continua intacto: sem isso ele ficaria com capitao_id apontando para
+        // alguem que nao e mais integrante.
+        assertThat(time.getUsuarios()).hasSize(2);
+        assertThat(time.getCapitao().getNomeUsuario()).isEqualTo("fulano");
+    }
+
+    @Test
+    @DisplayName("removerUsuarioNoTime pelo capitao remove outro integrante")
+    void capitaoRemoveOutro() {
+        Time time = timeComCapitao();
+        Usuario sicrano = time.getUsuarios().get(1);
+        sicrano.setTime(time);
+
+        when(usuarioRepo.existsByNomeUsuario("sicrano")).thenReturn(true);
+        when(usuarioRepo.findByNomeUsuario("sicrano")).thenReturn(sicrano);
+
+        timeService.removerUsuarioNoTime(new CriarTimeRequest("Timaco", List.of("sicrano")), "fulano");
+
+        assertThat(time.getUsuarios()).hasSize(1);
+        assertThat(sicrano.getTime()).isNull();
+    }
+
+    // --------------------------- Capitao no DTO ---------------------
+
+    @Test
+    @DisplayName("buscarTime expoe o nome de usuario do capitao")
+    void buscarTimeExpoeCapitao() {
+        timeComCapitao();
+
+        assertThat(timeService.buscarTime("Timaco").getNomeCapitao()).isEqualTo("fulano");
+    }
+
+    @Test
+    @DisplayName("buscarTime devolve capitao nulo em time gravado sem capitao")
+    void buscarTimeSemCapitao() {
+        Time time = new Time();
+        time.setNome("Orfao");
+        when(timeRepo.existsByNome("Orfao")).thenReturn(true);
+        when(timeRepo.findByNome("Orfao")).thenReturn(time);
+
+        assertThat(timeService.buscarTime("Orfao").getNomeCapitao()).isNull();
     }
 }
