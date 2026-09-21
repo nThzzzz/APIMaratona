@@ -1,0 +1,4 @@
+# O fetcher leve (impersonacao de TLS) basta; nao rode `scrapling install`,
+# que baixa navegadores e nao e necessario aqui.
+scrapling[fetchers]==0.4.15
+pymongo==4.10.1
