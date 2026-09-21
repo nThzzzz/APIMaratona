@@ -53,11 +53,13 @@ Fui aprendendo na dificuldade, e provavelmente não é a melhor solução. Ela t
 
 ## Se o scraping é bloqueado, o que sobra da justificativa do Mongo?
 
-Sobra pouca coisa hoje, e é uma dívida que eu reconheço.
+Essa foi a dívida que mais me incomodou, e agora tem resposta.
 
-O Cloudflare barra o scraper. O Codeforces responde 403 com página de desafio e o fallback grava só os metadados, com uma mensagem fixa no lugar do enunciado. Na prática, o documento que fica no Mongo tem quatro campos escalares e uma string de erro. Isso caberia numa tabela relacional sem esforço nenhum.
+Por muito tempo achei que fosse header ou timeout. Não era. O bloqueio acontece no handshake TLS: o fingerprint do cliente HTTP do Java entrega que não é navegador antes de qualquer cabeçalho ser lido. Medi contra o mesmo problema: o Jsoup com referer e 20 segundos de timeout dá 403, o curl com o jogo completo de headers de navegador também dá 403, e um cliente que imita o fingerprint do Chrome responde 200 em menos de um segundo. Nenhum ajuste no Java ia resolver isso.
 
-O desenho está certo pra intenção. A aplicação real precisa do enunciado pra ter uma tela decente, e enunciado é HTML denso e sem esquema, que é exatamente o caso de uso de banco de documentos. O problema é que a intenção depende de um dado que ainda não chega. Planejo resolver, mas a solução não parece simples.
+Por isso o scraping saiu da aplicação. Quem busca o enunciado é o `scripts/backfill_enunciados.py`, e ele roda fora da API de propósito: enunciado de problema publicado não muda, então isso é backfill que roda uma vez, não trabalho de requisição. O `cadastrarProblema` grava o que a submissão já traz, nome, tags e rating, e deixa a descrição pro script preencher depois. Se o script quebrar um dia, a API continua no ar.
+
+Com o enunciado entrando de verdade, a justificativa do Mongo volta a valer: HTML denso e sem esquema é exatamente o caso de uso de banco de documentos.
 
 ## A sincronização é disparada e esquecida
 
@@ -103,18 +105,17 @@ São três caches nomeados pelo que devolvem, com TTL de 60 minutos. A consequê
 
 Consertei recentemente:
 
-- Rate limit em `/auth/login` e `/cadastro`. Era o mais óbvio da lista.
 - Paginação nas três listagens, que devolviam a base inteira.
 - Três N+1: os usuários que resolveram um problema, os problemas resolvidos por um usuário, e as duas rotas de recomendação. Todos faziam uma consulta por item dentro do laço.
 - A postura de segurança invertida e a regra de autorização centralizada, das duas perguntas acima.
+- O scraping dos enunciados, que agora roda fora da API. A pergunta acima conta como.
 
 Continua em aberto:
 
-- **Scraping bloqueado pelo Cloudflare.** Sem isso o Mongo guarda pouco. É o que mais me incomoda e o que tem solução menos óbvia.
+- **Sem rate limit por IP.** Tinha um contador em memória em `/auth/login` e `/cadastro` e eu removi. Hoje a barreira contra força bruta é só o custo do BCrypt, que é lento de propósito mas não é limite. Se voltar, o lugar certo é um contador no Redis, que já está no projeto, ou um proxy na frente.
 - **Retry da sincronização.** A ideia existe, o código não.
 - **Posse do handle.** Ninguém prova ser dono do nome que cadastrou.
 - **`ddl-auto: update`.** O esquema muda sozinho, sem migration versionada. Foi o que deixou times sem capitão quando a coluna surgiu.
 - **Limite de 3 integrantes replicado em três lugares.** Rota nova que esqueça a checagem fura o limite.
-- **CORS** sem configuração explícita.
 
 E, como em qualquer coisa que roda, sem dúvida tem mais coisa que eu ainda não vi.

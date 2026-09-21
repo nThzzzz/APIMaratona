@@ -4,7 +4,7 @@ Esta coleção percorre o ciclo de vida completo da API Maratona contra um ambie
 
 **São 41 requisições e todas devem responder `200`.**
 
-> Não confunda com a suíte de testes automatizados em Java (`./mvnw test`, 86 testes), descrita no [README principal](../README.md#-testes). Aquela roda sem infraestrutura nenhuma e é o que o CI executa. Esta aqui exige o ambiente de pé e serve para demonstrar o sistema funcionando.
+> Não confunda com a suíte de testes automatizados em Java (`./mvnw test`, 88 testes), descrita no [README principal](../README.md#-testes). Aquela roda sem infraestrutura nenhuma e é o que o CI executa. Esta aqui exige o ambiente de pé e serve para demonstrar o sistema funcionando.
 
 ## 1. Suba o ambiente
 
@@ -72,12 +72,12 @@ Devolve o ambiente ao estado inicial, o que torna a coleção repetível: sem is
 
 Duas consequências práticas:
 
-* **A coleção depende de internet.** Sem acesso ao Codeforces tudo continua respondendo `200` (as falhas são engolidas por design), mas o `rating` vem zerado e as rotas de problema devolvem listas vazias.
-* Trocar por nomes inventados tem o mesmo efeito: não quebra nada, só esvazia os dados.
+* **A coleção depende de internet.** Falha de rede continua sendo engolida por design, então tudo responde `200`, mas o `rating` vem zerado e as rotas de problema devolvem listas vazias.
+* **Trocar por nomes inventados quebra a coleção.** O Codeforces responde `400` para handle que não existe, e o cadastro propaga isso: a requisição falha com `400` em vez de `200`. Handle inexistente é erro do usuário e barra o cadastro; indisponibilidade do Codeforces, não.
 
 ## 6. Primeira execução × execuções seguintes
 
-A sincronização com o Codeforces é `@Async` e passa por *web scraping*, então **numa base nova o Mongo ainda está vazio quando a pasta de Pesquisas roda**. Isso é tratado, não é um problema:
+A sincronização com o Codeforces é `@Async`, então **numa base nova o Mongo ainda está vazio quando a pasta de Pesquisas roda**. Isso é tratado, não é um problema:
 
 * `Listar problemas` captura o `idProblema` de um item que existe de fato, em vez de assumir um id fixo.
   A rota é paginada, então o script lê os itens de `.content` (as três listagens devolvem um objeto `Page`,
@@ -86,6 +86,8 @@ A sincronização com o Codeforces é `@Async` e passa por *web scraping*, entã
 * A limpeza não apaga os problemas, que funcionam como cache do Codeforces. Da segunda execução em diante já estão lá e essas duas requisições passam a rodar de verdade.
 
 Como referência, numa execução limpa a sincronização traz cerca de 140 problemas em segundo plano.
+
+Esses problemas chegam com nome, tags e rating, mas **sem o enunciado**: o Codeforces bloqueia no handshake TLS e quem busca a descrição é o `scripts/backfill_enunciados.py`, rodado à parte. A coleção não depende disso, porque nenhuma asserção olha o campo `descricao`.
 
 Listas vazias em `Problemas feitos por` e nas recomendações também são `200`: o usuário existe, só ainda não tem nada no grafo.
 

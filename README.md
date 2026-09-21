@@ -24,6 +24,7 @@ O ponto do projeto é persistência poliglota de verdade: PostgreSQL, MongoDB, N
 * **Redis** para o cache de resposta
 * **Spring Data** (JPA, MongoRepository, Neo4jRepository)
 * **Spring Security + JWT** (jjwt), com senhas em BCrypt
+* **Scrapling** (Python), no script que preenche os enunciados fora da API
 * **Lombok** e **Maven**
 
 ---
@@ -46,6 +47,17 @@ Para derrubar e apagar os dados: `docker compose -f Docker/docker-compose.yml do
 
 Rodando fora do container, as variáveis exigidas no boot são `DATABASE_URL`, `DATABASE_USUARIO`, `DATABASE_SENHA`, `MONGO_URI`, `REDIS_URL`, `NEO4J_URI`, `NEO4J_USUARIO`, `NEO4J_SENHA` e `JWT_SECRET`. A aplicação não inicia sem elas.
 
+### Enunciados dos problemas
+
+A sincronização preenche tudo menos a descrição. Para buscá-la:
+
+```bash
+pip install -r scripts/requirements.txt
+MONGO_URI=mongodb://localhost:27017 python scripts/backfill_enunciados.py
+```
+
+Só pega os problemas que ainda estão sem enunciado e dá para interromper no meio: rodar de novo continua de onde parou. Use `--dry-run` para ver o que ele faria sem gravar.
+
 ---
 
 ## 🏗️ Arquitetura
@@ -53,6 +65,7 @@ Rodando fora do container, as variáveis exigidas no boot são `DATABASE_URL`, `
 Camadas padrão do Spring: Controller, Service, Repository, Model. O que tem de interessante está em como os quatro bancos se dividem e no que acontece nas bordas.
 
 * **Sincronização com o Codeforces.** No cadastro, a API busca as submissões aceitas do handle e registra cada problema resolvido. Roda em background (`@Async`) porque são centenas de itens.
+* **Enunciados fora da API.** O Codeforces bloqueia no handshake TLS, então nenhum cliente HTTP do Java passa. A sincronização grava o que a submissão já traz (nome, tags, rating) e deixa a descrição vazia; quem busca o enunciado é o [`scripts/backfill_enunciados.py`](scripts/backfill_enunciados.py), que roda fora da aplicação.
 * **Recomendação em Cypher.** Duas consultas no Neo4j: filtro colaborativo (quem resolveu o que eu resolvi também resolveu o quê) e popularidade dentro da faixa de rating do usuário.
 * **Dois `TransactionManager`.** Um para o Postgres, outro para o Neo4j. Não existe transação distribuída entre os stores, e o sistema é desenhado para tolerar a divergência: o que é vital fica no Postgres.
 * **Cache no Redis** nas listagens e nas consultas de relacionamento, com invalidação nas escritas que afetam cada chave.
@@ -60,7 +73,7 @@ Camadas padrão do Spring: Controller, Service, Repository, Model. O que tem de 
 * **Erros padronizados.** Um `@RestControllerAdvice` traduz as exceções de domínio para `400`, `401` e `404` num mesmo formato de resposta. Os 401 levantados antes do controller são escritos pelo filtro, no mesmo formato.
 
 > [!NOTE]
-> 🧭 Por que quatro bancos, por que raspar HTML se existe API, o que quebra quando um store grava e o outro não, e o que hoje é dívida técnica: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+> 🧭 Por que quatro bancos, por que o scraping saiu do Java, o que quebra quando um store grava e o outro não, e o que hoje é dívida técnica: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ---
 
@@ -73,8 +86,8 @@ Autenticação stateless com JWT, sem sessão nem cookie.
 * **Deny by default.** As rotas públicas estão listadas explicitamente no `SecurityConfig` e todo o resto exige token. Rota nova que ninguém classificar nasce fechada, o que é o modo certo de errar.
 * **Dono do recurso.** O `nomeUsuario` do token precisa ser o da conta alvo. Token válido de outra pessoa também dá `401`.
 * **Senha de novo nas operações sensíveis.** Alterar e-mail, senha, `nomeUsuario` ou excluir a conta exigem a `senhaAtual` no corpo mesmo com token válido. O token diz quem você é; a senha confirma que você está ali naquele momento.
+* **CORS** liberado só para as origens configuradas em `CORS_ORIGENS`, sem credenciais, porque a sessão é o token no header e não há cookie a compartilhar.
 * **Capitão do time.** Só o capitão adiciona membro, remove membro, renomeia, transfere a capitania ou exclui o time. Enquanto for capitão, não consegue excluir a própria conta: precisa transferir antes. O novo capitão tem que já ser integrante.
-* **Rate limit** por IP em `/auth/login` e `/cadastro`, as duas rotas que não exigem token. Contador em memória, com as limitações disso documentadas no próprio filtro.
 
 Nas tabelas abaixo, 🔒 marca o que exige token.
 
@@ -93,7 +106,7 @@ Nas tabelas abaixo, 🔒 marca o que exige token.
 | Método | Endpoint                                             | Descrição |
 | :---   |:-----------------------------------------------------| :--- |
 | `POST` | `/cadastro`                                          | Cadastra um usuário e dispara a sincronização com o Codeforces. |
-| `GET`  | `/listaUsuarios`                                     | Lista usuários, sem expor senha. Paginado: `?page=&size=&sort=`. |
+| `GET`  | `/listaUsuarios`                                     | Lista usuários, sem expor senha nem e-mail. Paginado: `?page=&size=&sort=`. |
 | `GET`  | `/buscarUsuario/{nomeUsuario}`                       | Busca um usuário pelo nome de usuário. |
 | `PUT`  | `/editarUsuario/perfil/{nomeUsuario}/nome`           | 🔒 Altera o nome de exibição. |
 | `PUT`  | `/editarUsuario/credenciais/{nomeUsuario}/email`     | 🔒 Altera o e-mail. Exige a `senhaAtual`. |
@@ -132,7 +145,7 @@ Times têm no máximo 3 integrantes.
 
 ## 🧪 Testes
 
-São **86 testes**, e todos rodam sem precisar de banco nenhum:
+São **88 testes**, e todos rodam sem precisar de banco nenhum:
 
 ```bash
 ./mvnw test
