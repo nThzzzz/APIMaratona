@@ -24,7 +24,6 @@ O ponto do projeto é persistência poliglota de verdade: PostgreSQL, MongoDB, N
 * **Redis** para o cache de resposta
 * **Spring Data** (JPA, MongoRepository, Neo4jRepository)
 * **Spring Security + JWT** (jjwt), com senhas em BCrypt
-* **Jsoup** para o scraping dos enunciados
 * **Lombok** e **Maven**
 
 ---

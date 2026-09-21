@@ -13,9 +13,6 @@ import com.APImaratona.Maratona.Repository.Neo4j.ProblemaNodeRepository;
 import com.APImaratona.Maratona.Repository.Neo4j.UsuarioNodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.CacheEvict;
@@ -51,7 +48,7 @@ public class ProblemasService {
             return;
         }
 
-        Problema problema = extrairTexto(submissao);
+        Problema problema = doSubmissao(submissao);
         problemaRepository.save(problema);
         log.info("Problema cadastrado com sucesso: {} com as tags: {}", idProblema, tags);
     }
@@ -133,49 +130,21 @@ public class ProblemasService {
         return problemaRepository.findAll(paginacao);
     }
 
-    private Problema extrairTexto(CodeforcesSubmissionResponse submissao){
+    // Monta o documento com o que a propria submissao ja traz. A descricao fica vazia
+    // de proposito: o enunciado vem depois, pelo scripts/backfill_enunciados.py, porque o
+    // Codeforces bloqueia no handshake TLS e nenhum cliente HTTP do Java passa. Antes daqui
+    // existia um extrairTexto que tentava o scraping a cada problema, falhava em 100% das
+    // vezes e gravava uma string de erro no lugar do enunciado.
+    private Problema doSubmissao(CodeforcesSubmissionResponse submissao){
         Problema problema = new Problema();
 
         String idProblema = submissao.getProblem().getContestId() + submissao.getProblem().getIndex();
-        List<String> tags = submissao.getProblem().getTags();
+        String nome = submissao.getProblem().getName();
 
         problema.setIdProblema(idProblema);
-        problema.setTags(tags);
-
-        int rating = submissao.getProblem().getRating();
-        problema.setRating(rating);
-
-        String contestId = idProblema.replaceAll("[^0-9]", "");
-        String index = idProblema.replaceAll("[0-9]", "");
-
-        String url = "https://codeforces.com/problemset/problem/" + contestId + "/" + index;
-
-        log.info("Conectando no Codeforces na URL: {}", url);
-
-        try {
-            Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .header("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
-                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
-                    .header("Connection", "keep-alive")
-                    .timeout(1000)
-                    .get();
-
-            Element problemStatement = doc.selectFirst("div.problem-statement");
-            Element titleElement = doc.selectFirst("div.header .title");
-
-            problema.setNome(titleElement != null ? titleElement.text() : submissao.getProblem().getName());
-            problema.setDescricao(problemStatement != null ? problemStatement.outerHtml() : "<p>Texto indisponível</p>");
-
-            log.info("Scraping concluído com sucesso para o problema: {}", problema.getNome());
-
-        } catch (Exception e) {
-            log.warn("Web Scraping bloqueado (403) para o problema {}. Salvando com dados padrão.", idProblema);
-
-            // Se der 403 preenche com dados básicos em vez de travar a sincronização de todos os outros problemas.
-            problema.setNome(submissao.getProblem().getName() != null ? submissao.getProblem().getName() : idProblema);
-            problema.setDescricao("<p>Texto indisponível devido a bloqueio de segurança do Codeforces (Erro 403).</p>");
-        }
+        problema.setTags(submissao.getProblem().getTags());
+        problema.setRating(submissao.getProblem().getRating());
+        problema.setNome(nome != null ? nome : idProblema);
 
         return problema;
     }
