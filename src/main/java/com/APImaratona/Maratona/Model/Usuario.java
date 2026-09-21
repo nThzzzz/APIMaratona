@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -29,9 +30,15 @@ public class Usuario {
     private String rank;
     private int rating;
 
+    // Fora de equals/hashCode/toString: Time aponta de volta para ca (usuarios e
+    // capitao) e percorrer os dois lados entra em recursao infinita -- mesmo cuidado
+    // que UsuarioNode/ProblemaNode ja tomam. Excluir este lado ja quebra todo ciclo,
+    // porque e a unica aresta que sai do Usuario.
     @ManyToOne
     @JoinColumn(name = "id_time")
     @JsonIgnore
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Time time;
 
 }

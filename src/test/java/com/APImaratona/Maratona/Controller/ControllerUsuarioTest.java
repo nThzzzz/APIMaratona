@@ -146,7 +146,6 @@ class ControllerUsuarioTest extends ApiControllerTestSupport {
         UsuarioResponse usuario = new UsuarioResponse();
         usuario.setNome("Fulano");
         usuario.setNomeUsuario("fulano");
-        usuario.setEmail("fulano@teste.com");
         usuario.setNomeTime("Sem time");
         usuario.setRank("newbie");
         usuario.setRating(0);

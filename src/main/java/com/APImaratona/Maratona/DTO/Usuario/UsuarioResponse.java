@@ -9,7 +9,6 @@ import java.io.Serializable;
 public class UsuarioResponse implements Serializable  {
     private String nome;
     private String nomeUsuario;
-    private String email;
     private String nomeTime;
     private String rank;
     private int rating;
@@ -18,7 +17,6 @@ public class UsuarioResponse implements Serializable  {
         UsuarioResponse dto = new UsuarioResponse();
 
         dto.setNome(usuario.getNome());
-        dto.setEmail(usuario.getEmail());
         dto.setNomeUsuario(usuario.getNomeUsuario());
         dto.setNomeTime(usuario.getTime() != null ? usuario.getTime().getNome() : "Sem time");
         dto.setRank(usuario.getRank());
