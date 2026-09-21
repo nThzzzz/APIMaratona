@@ -185,15 +185,19 @@ public class UsuarioService {
             throw new RegraDeNegocio("Nome de usuário já em uso por outra pessoa");
         }
 
-        usuario.setNomeUsuario(nomeNovo);
-        usuarioRepo.save(usuario);
-
-        usuarioNodeRepository.atualizarNomeUsuarioNode(nomeUsuario, nomeNovo);
-
+        // Antes de gravar qualquer coisa: o Codeforces responde 400 para handle que nao
+        // existe e o infoPerfilUsuario propaga isso como RegraDeNegocio. Com a consulta
+        // depois do save, o nome ja tinha sido trocado no Postgres e no Neo4j quando a
+        // excecao subia, e o token novo nunca era emitido -- o subject do token antigo
+        // apontava para um nomeUsuario que nao existia mais e a conta ficava inacessivel.
         CodeforcesUserInfoResponse cfUsuario = codeforcesService.infoPerfilUsuario(nomeNovo);
+
+        usuario.setNomeUsuario(nomeNovo);
         usuario.setRank(cfUsuario.getRank());
         usuario.setRating(cfUsuario.getRating());
         usuarioRepo.save(usuario);
+
+        usuarioNodeRepository.atualizarNomeUsuarioNode(nomeUsuario, nomeNovo);
 
         String tokenNovo = jwtService.gerarToken(nomeNovo);
         return new LoginResponse(tokenNovo, "Bearer");
