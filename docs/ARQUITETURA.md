@@ -101,21 +101,4 @@ Limpa. A regra que usei foi "na dúvida, limpa tudo", pra ter certeza de não se
 
 São três caches nomeados pelo que devolvem, com TTL de 60 minutos. A consequência mais visível dessa escolha só apareceu quando fui medir: durante a sincronização com o Codeforces, o `cadastrarProblema` invalida o `cacheTodosProblemas` inteiro a cada problema processado. São cerca de 140 vezes seguidas numa carga inicial. Enquanto a sync roda, esse cache não serve pra nada.
 
-## O que eu sei que está pendente
-
-Consertei recentemente:
-
-- Paginação nas três listagens, que devolviam a base inteira.
-- Três N+1: os usuários que resolveram um problema, os problemas resolvidos por um usuário, e as duas rotas de recomendação. Todos faziam uma consulta por item dentro do laço.
-- A postura de segurança invertida e a regra de autorização centralizada, das duas perguntas acima.
-- O scraping dos enunciados, que agora roda fora da API. A pergunta acima conta como.
-
-Continua em aberto:
-
-- **Sem rate limit por IP.** Tinha um contador em memória em `/auth/login` e `/cadastro` e eu removi. Hoje a barreira contra força bruta é só o custo do BCrypt, que é lento de propósito mas não é limite. Se voltar, o lugar certo é um contador no Redis, que já está no projeto, ou um proxy na frente.
-- **Retry da sincronização.** A ideia existe, o código não.
-- **Posse do handle.** Ninguém prova ser dono do nome que cadastrou.
-- **`ddl-auto: update`.** O esquema muda sozinho, sem migration versionada. Foi o que deixou times sem capitão quando a coluna surgiu.
-- **Limite de 3 integrantes replicado em três lugares.** Rota nova que esqueça a checagem fura o limite.
-
 E, como em qualquer coisa que roda, sem dúvida tem mais coisa que eu ainda não vi.
